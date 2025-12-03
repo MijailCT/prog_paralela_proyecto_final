@@ -13,16 +13,23 @@ namespace ProyectoFinalProgramacionParalela
 
             Console.WriteLine("Buscador de texto en archivos V0.1");
 
-            //TODO: hacer un loop con todo esto
             //TODO: hacer todo esto de forma asincrona(?)
-            Console.Write("Directorio de trabajo: ");
-            string dir = Console.ReadLine() ?? "./";
-            if (!Directory.Exists(dir))
+            if (!conf.GetLanzadoPrimeraVez())
             {
-                Console.WriteLine("ERROR: El directorio de trabajo proporcionado no existe.");
-                return;
+                Console.WriteLine("[Configuracion inicial]");
+                Console.WriteLine("A continuacion escribira datos necesarios para el funcionamiento del programa.");
+                Console.Write("Directorio de trabajo: ");
+                string dir = Console.ReadLine() ?? "./";
+                while (!Directory.Exists(dir))
+                {
+                    Console.WriteLine("ERROR: El directorio de trabajo proporcionado no existe.");
+                    Console.Write("Directorio de trabajo: ");
+                    dir = Console.ReadLine() ?? "./";
+                }
+                conf.Guardar();
             }
 
+            //TODO: hacer un menu + loop principal
             MotorBusquedaSingleton motorBusqueda = MotorBusquedaSingleton.MotorBusqueda;
             MotorSugerenciasSingleton motorSugerencias = MotorSugerenciasSingleton.MotorSugerencias;
             MetricasSingleton metricas = MetricasSingleton.Metricas;
