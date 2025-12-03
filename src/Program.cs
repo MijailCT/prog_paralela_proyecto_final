@@ -66,6 +66,11 @@ namespace ProyectoFinalProgramacionParalela
         {
             Console.WriteLine("Esto es un ejemplo...");
         }
+
+        public static void Test()
+        {
+            Console.WriteLine("Esto es otro ejemplo...");
+        }
     }
 
     public class MotorSugerenciasSingleton
