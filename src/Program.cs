@@ -7,6 +7,7 @@ namespace ProyectoFinalProgramacionParalela
         public static void Main()
         {
             Logs debugLogs = new Logs(LogsNivel.DEBUG);
+            ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
             //NOTA: esto es una base primitiva adonde empezar a trabajar, 
             // a medida que avancemos esto se hara haciendo mejor.
 
@@ -22,10 +23,10 @@ namespace ProyectoFinalProgramacionParalela
                 return;
             }
 
-            MotorBusquedaSingleton motorBusqueda = new MotorBusquedaSingleton();
-            MotorSugerenciasSingleton motorSugerencias = new MotorSugerenciasSingleton();
-            MetricasSingleton metricas = new MetricasSingleton();
-            DatosSingleton capaDatos = new DatosSingleton();
+            MotorBusquedaSingleton motorBusqueda = MotorBusquedaSingleton.MotorBusqueda;
+            MotorSugerenciasSingleton motorSugerencias = MotorSugerenciasSingleton.MotorSugerencias;
+            MetricasSingleton metricas = MetricasSingleton.Metricas;
+            DatosSingleton capaDatos = DatosSingleton.Datos;
             //List<File> files = Directory.GetFiles(dir); (un suponer)
             Console.WriteLine("Escribe tu busqueda, al iniciar se le recomendara " +
             "palabras que podria utilizar, estas pueden aceptarse con la tecla TAB.");
@@ -130,7 +131,7 @@ namespace ProyectoFinalProgramacionParalela
     }
 
     //OJO: Capa de datos
-    public class DatosSingleton
+    public sealed class DatosSingleton
     {
         private static DatosSingleton instance = null;
         private static readonly object _lock = new object();
