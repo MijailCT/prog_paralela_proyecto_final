@@ -62,28 +62,118 @@ namespace ProyectoFinalProgramacionParalela
     //TODO: mover cada clase a archivos independientes para mejor organizacion
     public class MotorBusquedaSingleton
     {
+        private static MotorBusquedaSingleton instance = null;
+        private static readonly object _lock = new object();
 
+        MotorBusquedaSingleton() { }
+        
+        public static MotorBusquedaSingleton MotorBusqueda
+        {
+            get
+            {
+                lock(_lock)
+                {
+                    if (instance == null)
+                    {
+                        instance = new MotorBusquedaSingleton();
+                    }
+                    return instance;
+                }
+            }
+        }
     }
 
     public class MotorSugerenciasSingleton
     {
+        private static MotorSugerenciasSingleton instance = null;
+        private static readonly object _lock = new object();
 
+        MotorSugerenciasSingleton() { }
+        
+        public static MotorSugerenciasSingleton MotorSugerencias
+        {
+            get
+            {
+                lock(_lock)
+                {
+                    if (instance == null)
+                    {
+                        instance = new MotorSugerenciasSingleton();
+                    }
+                    return instance;
+                }
+            }
+        }
     }
 
     public class MetricasSingleton
     {
+        private static MetricasSingleton instance = null;
+        private static readonly object _lock = new object();
 
+        MetricasSingleton() { }
+        
+        public static MetricasSingleton Metricas
+        {
+            get
+            {
+                lock(_lock)
+                {
+                    if (instance == null)
+                    {
+                        instance = new MetricasSingleton();
+                    }
+                    return instance;
+                }
+            }
+        }
     }
 
     //OJO: Capa de datos
     public class DatosSingleton
     {
+        private static DatosSingleton instance = null;
+        private static readonly object _lock = new object();
 
+        DatosSingleton() { }
+        
+        public static DatosSingleton Datos
+        {
+            get
+            {
+                lock(_lock)
+                {
+                    if (instance == null)
+                    {
+                        instance = new DatosSingleton();
+                    }
+                    return instance;
+                }
+            }
+        }
     }
 
-    public class ConfiguracionSingleton
+    public sealed class ConfiguracionSingleton
     {
+        private static ConfiguracionSingleton instance = null;
+        private static readonly object _lock = new object();
 
+        ConfiguracionSingleton(){}
+
+        public static ConfiguracionSingleton Configuracion
+        {
+            get
+            {
+                lock(_lock)
+                {
+                    if (instance == null)
+                    {
+                        instance = new ConfiguracionSingleton();
+                    }
+                    return instance;
+                }
+            }
+        }
     }
 
     public enum LogsNivel
