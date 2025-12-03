@@ -55,6 +55,8 @@ nunit-*.xml
 
 # logs del programa
 src/*.txt
+/*.txt
 
 # configuracion
 src/*.json
+/*.json
