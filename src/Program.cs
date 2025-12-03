@@ -72,7 +72,7 @@ namespace ProyectoFinalProgramacionParalela
         {
             get
             {
-                lock(_lock)
+                lock (_lock)
                 {
                     if (instance == null)
                     {
@@ -95,7 +95,7 @@ namespace ProyectoFinalProgramacionParalela
         {
             get
             {
-                lock(_lock)
+                lock (_lock)
                 {
                     if (instance == null)
                     {
@@ -118,7 +118,7 @@ namespace ProyectoFinalProgramacionParalela
         {
             get
             {
-                lock(_lock)
+                lock (_lock)
                 {
                     if (instance == null)
                     {
@@ -137,12 +137,12 @@ namespace ProyectoFinalProgramacionParalela
         private static readonly object _lock = new object();
 
         DatosSingleton() { }
-        
+
         public static DatosSingleton Datos
         {
             get
             {
-                lock(_lock)
+                lock (_lock)
                 {
                     if (instance == null)
                     {
