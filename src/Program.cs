@@ -62,7 +62,10 @@ namespace ProyectoFinalProgramacionParalela
     //TODO: mover cada clase a archivos independientes para mejor organizacion
     public class MotorBusquedaSingleton
     {
-
+        public static void Buscar()
+        {
+            Console.WriteLine("Esto es un ejemplo...");
+        }
     }
 
     public class MotorSugerenciasSingleton
