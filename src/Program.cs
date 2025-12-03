@@ -26,6 +26,7 @@ namespace ProyectoFinalProgramacionParalela
                     Console.Write("Directorio de trabajo: ");
                     dir = Console.ReadLine() ?? "./";
                 }
+                conf.SetDirectorio(dir);
                 conf.Guardar();
             }
 
