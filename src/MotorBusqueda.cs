@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace ProyectoFinalProgramacionParalela
 {
@@ -14,6 +16,28 @@ namespace ProyectoFinalProgramacionParalela
         {
             directorioTrabajo = directorio;
             opcionesParalelas = opt;
+        }
+
+        public static void AbrirArchivo(string path)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Process.Start(new ProcessStartInfo(path)
+                {
+                    UseShellExecute = true
+                });
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Process.Start("xdg-open", path);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Process.Start("open", path);
+            } else
+            {
+                
+            }
         }
         
         public async Task<List<string>> Buscar(string texto)
