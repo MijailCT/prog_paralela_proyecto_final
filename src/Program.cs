@@ -2,6 +2,30 @@
 {
     public class Program
     {
+        public static void MostrarTabla(List<string> lista)
+        {
+            Console.WriteLine("0. Abortar seleccion");
+            for (int i = 0; i < lista.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {lista[i]}");
+            }
+            int archivoIdx = -1;
+            while (archivoIdx == -1)
+            {
+                Console.Write("Seleccione un archivo para abrir [0]: ");
+                try
+                {
+                    archivoIdx = int.Parse(Console.ReadLine() ?? "0");
+                }
+                catch (FormatException)
+                {
+                    archivoIdx = -1;
+                }
+                if(archivoIdx > lista.Count || archivoIdx < 0) archivoIdx = -1;
+            }
+            Console.WriteLine($"Abriendo el archivo {lista[archivoIdx]}");
+            MotorBusquedaSingleton.AbrirArchivo(lista[archivoIdx]);
+        }
         public static async Task Main()
         {
             Logs debugLogs = new Logs(LogsNivel.DEBUG);
@@ -28,10 +52,10 @@
             }
 
             //TODO: hacer un menu + loop principal
+            DatosSingleton capaDatos = DatosSingleton.Datos;
             MotorBusquedaSingleton motorBusqueda = MotorBusquedaSingleton.MotorBusqueda;
             MotorSugerenciasSingleton motorSugerencias = MotorSugerenciasSingleton.MotorSugerencias;
             MetricasSingleton metricas = MetricasSingleton.Metricas;
-            DatosSingleton capaDatos = DatosSingleton.Datos;
             //List<File> files = Directory.GetFiles(dir); (un suponer)
             Console.WriteLine("Escribe tu busqueda, al iniciar se le recomendara " +
             "palabras que podria utilizar, estas pueden aceptarse con la tecla TAB.");
@@ -62,7 +86,7 @@
             }
             Console.WriteLine();
             Console.WriteLine($"Buscando el texto {input} en archivos...");
-            //motorBusqueda.Buscar(dir, input); (un suponer)
+            MostrarTabla(await motorBusqueda.Buscar(input));
         }
     }
 };
