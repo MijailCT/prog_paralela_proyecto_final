@@ -4,7 +4,7 @@ namespace ProyectoFinalProgramacionParalela
 {
     public class Program
     {
-        public static void Main()
+        public static async Task Main()
         {
             Logs debugLogs = new Logs(LogsNivel.DEBUG);
             ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
@@ -13,7 +13,6 @@ namespace ProyectoFinalProgramacionParalela
 
             Console.WriteLine("Buscador de texto en archivos V0.1");
 
-            //TODO: hacer todo esto de forma asincrona(?)
             if (!conf.GetLanzadoPrimeraVez())
             {
                 Console.WriteLine("[Configuracion inicial]");
@@ -54,7 +53,7 @@ namespace ProyectoFinalProgramacionParalela
                     Console.SetCursorPosition(left - 1, top);
                     Console.Write(' ');
                     Console.SetCursorPosition(left - 1, top);
-                    Console.Out.Flush(); //por si acaso
+                    await Console.Out.FlushAsync(); //por si acaso
                 }
                 else
                 {
@@ -311,13 +310,25 @@ namespace ProyectoFinalProgramacionParalela
         public void Write(string txt, LogsNivel? nivel)
         {
             var nvl = nivel ?? nivel_minimo;
-            if(nvl >= nivel_minimo) File.AppendAllText(logFilePath, $"[{nvl.ToString()}] {txt}");
+            if (nvl >= nivel_minimo) File.AppendAllText(logFilePath, $"[{nvl.ToString()}] {txt}");
+        }
+
+        public async Task WriteAsync(string txt, LogsNivel? nivel)
+        {
+            var nvl = nivel ?? nivel_minimo;
+            if (nvl >= nivel_minimo) await File.AppendAllTextAsync(logFilePath, $"[{nvl.ToString()}] {txt}");
         }
 
         public void WriteLine(string txt, LogsNivel? nivel)
         {
             var nvl = nivel ?? nivel_minimo;
-            if((nivel ?? nivel_minimo) >= nivel_minimo) File.AppendAllText(logFilePath, $"[{nvl.ToString()}] {txt}\n");
+            if ((nivel ?? nivel_minimo) >= nivel_minimo) File.AppendAllText(logFilePath, $"[{nvl.ToString()}] {txt}\n");
+        }
+        
+        public async Task WriteLineAsync(string txt, LogsNivel? nivel)
+        {
+            var nvl = nivel ?? nivel_minimo;
+            if((nivel ?? nivel_minimo) >= nivel_minimo) await File.AppendAllTextAsync(logFilePath, $"[{nvl.ToString()}] {txt}\n");
         }
     }
 };
