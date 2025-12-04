@@ -4,7 +4,7 @@ namespace ProyectoFinalProgramacionParalela
 {
     public class Program
     {
-        public static void Main()
+        public static async Task Main()
         {
             Logs debugLogs = new Logs(LogsNivel.DEBUG);
             ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
@@ -13,7 +13,6 @@ namespace ProyectoFinalProgramacionParalela
 
             Console.WriteLine("Buscador de texto en archivos V0.1");
 
-            //TODO: hacer todo esto de forma asincrona(?)
             if (!conf.GetLanzadoPrimeraVez())
             {
                 Console.WriteLine("[Configuracion inicial]");
@@ -54,7 +53,7 @@ namespace ProyectoFinalProgramacionParalela
                     Console.SetCursorPosition(left - 1, top);
                     Console.Write(' ');
                     Console.SetCursorPosition(left - 1, top);
-                    Console.Out.Flush(); //por si acaso
+                    await Console.Out.FlushAsync(); //por si acaso
                 }
                 else
                 {
