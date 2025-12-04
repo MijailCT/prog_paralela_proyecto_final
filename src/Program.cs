@@ -310,13 +310,25 @@ namespace ProyectoFinalProgramacionParalela
         public void Write(string txt, LogsNivel? nivel)
         {
             var nvl = nivel ?? nivel_minimo;
-            if(nvl >= nivel_minimo) File.AppendAllText(logFilePath, $"[{nvl.ToString()}] {txt}");
+            if (nvl >= nivel_minimo) File.AppendAllText(logFilePath, $"[{nvl.ToString()}] {txt}");
+        }
+
+        public async Task WriteAsync(string txt, LogsNivel? nivel)
+        {
+            var nvl = nivel ?? nivel_minimo;
+            if (nvl >= nivel_minimo) await File.AppendAllTextAsync(logFilePath, $"[{nvl.ToString()}] {txt}");
         }
 
         public void WriteLine(string txt, LogsNivel? nivel)
         {
             var nvl = nivel ?? nivel_minimo;
-            if((nivel ?? nivel_minimo) >= nivel_minimo) File.AppendAllText(logFilePath, $"[{nvl.ToString()}] {txt}\n");
+            if ((nivel ?? nivel_minimo) >= nivel_minimo) File.AppendAllText(logFilePath, $"[{nvl.ToString()}] {txt}\n");
+        }
+        
+        public async Task WriteLineAsync(string txt, LogsNivel? nivel)
+        {
+            var nvl = nivel ?? nivel_minimo;
+            if((nivel ?? nivel_minimo) >= nivel_minimo) await File.AppendAllTextAsync(logFilePath, $"[{nvl.ToString()}] {txt}\n");
         }
     }
 };
