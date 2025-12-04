@@ -86,7 +86,7 @@
             }
             Console.WriteLine();
             Console.WriteLine($"Buscando el texto {input} en archivos...");
-            //motorBusqueda.Buscar(dir, input); (un suponer)
+            MostrarTabla(await motorBusqueda.Buscar(input));
         }
     }
 };
