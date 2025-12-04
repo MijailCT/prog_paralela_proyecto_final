@@ -28,10 +28,10 @@
             }
 
             //TODO: hacer un menu + loop principal
+            DatosSingleton capaDatos = DatosSingleton.Datos;
             MotorBusquedaSingleton motorBusqueda = MotorBusquedaSingleton.MotorBusqueda;
             MotorSugerenciasSingleton motorSugerencias = MotorSugerenciasSingleton.MotorSugerencias;
             MetricasSingleton metricas = MetricasSingleton.Metricas;
-            DatosSingleton capaDatos = DatosSingleton.Datos;
             //List<File> files = Directory.GetFiles(dir); (un suponer)
             Console.WriteLine("Escribe tu busqueda, al iniciar se le recomendara " +
             "palabras que podria utilizar, estas pueden aceptarse con la tecla TAB.");
