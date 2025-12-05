@@ -37,7 +37,7 @@ namespace ProyectoFinalProgramacionParalela
             }
         }
         
-        public async Task<List<string>> Buscar(string texto)
+        public List<string> Buscar(string texto)
         {
             //Enumeramos toooodos los archivos (incluyendo los que estan adentro de los directorios) de nuestro directorio de trabajo
             //TODO: reemplazarlo con una funcion que enumere los archivos y despues los organize segun los puntajes
