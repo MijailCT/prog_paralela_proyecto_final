@@ -34,9 +34,6 @@ namespace ProyectoFinalProgramacionParalela
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 Process.Start("open", path);
-            } else
-            {
-                
             }
         }
         

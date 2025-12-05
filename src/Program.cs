@@ -2,61 +2,51 @@
 {
     public class Program
     {
-        public static void MostrarTabla(List<string> lista)
+
+        public static int MostrarOpciones(List<string> lista,
+        string seleccionTexto = "Seleccione un item",
+        string seleccionCero = "Abortar seleccion")
         {
-            Console.WriteLine("0. Abortar seleccion");
+            Console.WriteLine($"0. {seleccionCero}");
             for (int i = 0; i < lista.Count; i++)
             {
                 Console.WriteLine($"{i + 1}. {lista[i]}");
             }
-            int archivoIdx = -1;
-            while (archivoIdx == -1)
+            int seleccionIdx = -1;
+            while (seleccionIdx == -1)
             {
-                Console.Write("Seleccione un archivo para abrir [0]: ");
+                Console.Write($"{seleccionTexto} [DEJAR VACIO para seleccionar 0]: ");
                 try
                 {
-                    archivoIdx = int.Parse(Console.ReadLine() ?? "0");
+                    string numeroStr = Console.ReadLine() ?? "0";
+                    if (numeroStr == "") numeroStr = "0";
+                    seleccionIdx = int.Parse(numeroStr);
                 }
                 catch (FormatException)
                 {
-                    archivoIdx = -1;
+                    seleccionIdx = -1;
                 }
-                if(archivoIdx > lista.Count || archivoIdx < 0) archivoIdx = -1;
+                if (seleccionIdx > lista.Count || seleccionIdx < 0) seleccionIdx = -1;
             }
-            Console.WriteLine($"Abriendo el archivo {lista[archivoIdx]}");
-            MotorBusquedaSingleton.AbrirArchivo(lista[archivoIdx]);
+            return seleccionIdx == 0 ? -1 : seleccionIdx;
         }
-        public static async Task Main()
+
+        public static void MostrarTablaArchivos(List<string> lista)
         {
-            Logs debugLogs = new Logs(LogsNivel.DEBUG);
-            ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
-            //NOTA: esto es una base primitiva adonde empezar a trabajar, 
-            // a medida que avancemos esto se hara haciendo mejor.
+            int archivoIdx = MostrarOpciones(lista, "Seleccione un archivo para abrir");
+            Console.WriteLine($"Abriendo el archivo {lista[archivoIdx - 1]}!");
+            MotorBusquedaSingleton.AbrirArchivo(lista[archivoIdx - 1]);
+        }
 
-            Console.WriteLine("Buscador de texto en archivos V0.1");
-
-            if (!conf.GetLanzadoPrimeraVez())
-            {
-                Console.WriteLine("[Configuracion inicial]");
-                Console.WriteLine("A continuacion escribira datos necesarios para el funcionamiento del programa.");
-                Console.Write("Directorio de trabajo: ");
-                string dir = Console.ReadLine() ?? "./";
-                while (!Directory.Exists(dir))
-                {
-                    Console.WriteLine("ERROR: El directorio de trabajo proporcionado no existe.");
-                    Console.Write("Directorio de trabajo: ");
-                    dir = Console.ReadLine() ?? "./";
-                }
-                conf.SetDirectorio(dir);
-                conf.Guardar();
-            }
-
-            //TODO: hacer un menu + loop principal
+        public static async Task Busqueda()
+        {
+            Console.Clear();
+            Console.WriteLine("[Busqueda de texto en archivos]");
             DatosSingleton capaDatos = DatosSingleton.Datos;
             MotorBusquedaSingleton motorBusqueda = MotorBusquedaSingleton.MotorBusqueda;
             MotorSugerenciasSingleton motorSugerencias = MotorSugerenciasSingleton.MotorSugerencias;
             MetricasSingleton metricas = MetricasSingleton.Metricas;
-            //List<File> files = Directory.GetFiles(dir); (un suponer)
+
             Console.WriteLine("Escribe tu busqueda, al iniciar se le recomendara " +
             "palabras que podria utilizar, estas pueden aceptarse con la tecla TAB.");
             Console.WriteLine("Para buscar el texto en los archivos tienes que presionar la tecla ENTER.");
@@ -85,8 +75,149 @@
                 //motorSugerencias.Predecir(input); (un suponer)
             }
             Console.WriteLine();
-            Console.WriteLine($"Buscando el texto {input} en archivos...");
-            MostrarTabla(await motorBusqueda.Buscar(input));
+            Console.WriteLine($"Buscando el texto \"{input}\" en archivos...");
+            //metricas.EmpezarMedicion("Motor de busqueda"); (un suponer)
+            List<string> resultados = await motorBusqueda.Buscar(input);
+            //metricas.TerminarMedicion("Motor de busqueda"); (un suponer)
+            MostrarTablaArchivos(resultados);
+        }
+
+        public static async Task Configuracion()
+        {
+            var conf = ConfiguracionSingleton.Configuracion;
+            while (true)
+            {
+                Console.Clear();
+                Console.WriteLine("[Configuracion]");
+                Console.WriteLine($"Modo de paralelismo: {conf.GetModo().ToString()}");
+                Console.WriteLine($"Hilos: {conf.GetHilos()}");
+                Console.WriteLine($"Directorio de trabajo: {conf.GetDirectorio()}");
+                int seleccionConf = MostrarOpciones(new List<string>{
+                "Ir hacia atras y olvidar los cambios (LOS CAMBIOS NO SE GUARDARAN)",
+                "Modo de paralelismo",
+                "Hilos (para el modo custom)",
+                "Directorio de trabajo"
+                }, "Seleccione que opcion quiere configurar", "Ir hacia atras y guardar los cambios");
+                switch(seleccionConf - 1)
+                {
+                    case 0:
+                        conf.Cargar();
+                        return;
+                    case 1:
+                        int seleccionModo = MostrarOpciones(new List<string>{
+                        "Light: usar la mitad de los hilos",
+                        "Heavy: usar TODOS los hilos",
+                        "Custom: usar una cantidad de hilos definida por la opcion \"Hilos\"",
+                        "Optimized: usar una cantidad de hilos optimizados de forma dinamica por la TPL"
+                        }, "Seleccione un modo de paralelismo");
+                        if (seleccionModo == -1) break;
+
+                        conf.SetModo((ConfiguracionModo)Enum.ToObject(typeof(ConfiguracionModo), seleccionModo - 1));
+                        break;
+                    case 2:
+                        int hilos = -1;
+                        while (hilos == -1)
+                        {
+                            Console.Write($"Hilos [DEJAR VACIO para seleccionar {Environment.ProcessorCount}]: ");
+                            string hilosStr = Console.ReadLine() ?? Environment.ProcessorCount.ToString();
+                            if (hilosStr == "") hilosStr = Environment.ProcessorCount.ToString();
+
+                            try
+                            {
+                                hilos = int.Parse(hilosStr);
+                            }
+                            catch (FormatException)
+                            {
+                                hilos = -1;
+                            }
+                        }
+                        conf.SetHilos(hilos);
+                        break;
+                    case 3:
+                        Console.Write("Directorio de trabajo: ");
+                        string dir = Console.ReadLine() ?? ".";
+                        while (!Directory.Exists(dir))
+                        {
+                            Console.WriteLine("ERROR: El directorio de trabajo proporcionado no existe.");
+                            Console.Write("Directorio de trabajo: ");
+                            dir = Console.ReadLine() ?? ".";
+                        }
+                        conf.SetDirectorio(dir);
+                        break;
+                    default:
+                        conf.Guardar();
+                        return;
+                }
+            }
+        }
+        
+        //Asincrono porque no podemos gastar tiempo de procesamiento haciendo nada 
+        public static async Task Error(string texto)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"ERROR: {texto}");
+            Console.ResetColor();
+            await Task.Delay(2000);
+        }
+
+        public static async Task Main()
+        {
+            Console.Clear();
+            Logs debugLogs = new Logs(LogsNivel.DEBUG);
+            ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
+            DatosSingleton capaDatos = DatosSingleton.Datos;
+            MetricasSingleton metricas = MetricasSingleton.Metricas;
+
+            Console.WriteLine("Buscador de texto en archivos V0.1");
+
+            if (!conf.GetLanzadoPrimeraVez())
+            {
+                Console.WriteLine("[Configuracion inicial]");
+                Console.WriteLine("A continuacion escribira datos necesarios para el funcionamiento del programa.");
+                Console.Write("Directorio de trabajo: ");
+                string dir = Console.ReadLine() ?? "./";
+                while (!Directory.Exists(dir))
+                {
+                    Console.WriteLine("ERROR: El directorio de trabajo proporcionado no existe.");
+                    Console.Write("Directorio de trabajo: ");
+                    dir = Console.ReadLine() ?? "./";
+                }
+                conf.SetDirectorio(dir);
+                conf.Guardar();
+            }
+
+            while (true)
+            {
+                Console.WriteLine("[Menu inicial]");
+                Console.WriteLine("1. Busqueda de texto en archivos");
+                Console.WriteLine("2. Configuracion");
+                Console.WriteLine("0. Salir");
+                ConsoleKeyInfo key;
+                while ((key = Console.ReadKey(true)).Key != ConsoleKey.Escape)
+                {
+                    if (key.Key == ConsoleKey.D1 || key.Key == ConsoleKey.NumPad1)
+                    {
+                        await Busqueda();
+                        break;
+                    }
+                    if (key.Key == ConsoleKey.D2 || key.Key == ConsoleKey.NumPad2)
+                    {
+                        await Configuracion();
+                        break;
+                    }
+                    else if (key.Key == ConsoleKey.D0 || key.Key == ConsoleKey.NumPad0)
+                    {
+                        Environment.Exit(0);
+                        break;
+                    }
+                    else
+                    {
+                        await Error("La opcion seleccionada no existe!");
+                        break;
+                    }
+                }
+                Console.Clear();
+            }
         }
     }
 };

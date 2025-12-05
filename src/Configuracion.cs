@@ -92,6 +92,8 @@ namespace ProyectoFinalProgramacionParalela
             }
         }
 
+        public int GetHilos() => datos.hilos;
+
         public void SetHilos(int nuevo_hilos)
         {
             lock (datos_lock)
