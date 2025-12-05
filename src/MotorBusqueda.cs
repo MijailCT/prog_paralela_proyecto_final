@@ -15,6 +15,65 @@ namespace ProyectoFinalProgramacionParalela
         {
         }
 
+        //Implementacion de Directory.EnumerateFiles que atrapa errores
+        //OJO: Esto no es una funcion que mete a la memoria todos los archivos, 
+        // sino un iterador que trabaja por partes.
+        //TODO: Tomar en cuenta los puntajes de cada archivo de alguna manera...
+        public static IEnumerable<string> EnumerarArchivos(string directorioActual, string patron, SearchOption opcionesBusqueda)
+        {
+            //Enumeramos el directorio actual, pero agarramos errores para que no explote todo
+            IEnumerable<string>? archivos = null;
+            try
+            {
+                archivos = Directory.EnumerateFiles(directorioActual, patron, SearchOption.TopDirectoryOnly);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                logsBusqueda.WriteLine($"No se pudo acceder al directorio {directorioActual} durante una busqueda!", LogsNivel.ERROR);
+            }
+            catch (Exception ex)
+            {
+                logsBusqueda.WriteLine($"No se pudo acceder al directorio {directorioActual} por el siguiente error: {ex.Message}", LogsNivel.ERROR);
+            }
+
+            //Si fallamos con enumerar los archivos, nos retiramos y el iterador termina aqui
+            if (archivos == null) yield break;
+
+            foreach (var archivo in archivos)
+            {
+                yield return archivo;
+            }
+
+            //Si realmente queremos rebuscar en todo entonces a enumerar los demas directorios
+            if (opcionesBusqueda == SearchOption.AllDirectories)
+            {
+                IEnumerable<string>? subdirectorios = null;
+                //Por si acaso, uno nunca sabe...
+                try
+                {
+                    subdirectorios = Directory.EnumerateDirectories(directorioActual);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    logsBusqueda.WriteLine($"No se pudo leer los subdirectorios de {directorioActual} durante una busqueda!", LogsNivel.ERROR);
+                }
+                catch (Exception ex)
+                {
+                    logsBusqueda.WriteLine($"No se pudo leer los subdirectorios de {directorioActual} durante una busqueda por el siguiente error: {ex.Message}", LogsNivel.ERROR);
+                }
+
+                if (subdirectorios == null) yield break;
+
+                foreach (var subdirectorio in subdirectorios)
+                {
+                    foreach (var archivo in EnumerarArchivos(subdirectorio, patron, opcionesBusqueda))
+                    {
+                        yield return archivo;
+                    }
+                }
+            }
+        }
+
         public static void AbrirArchivo(string path)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
