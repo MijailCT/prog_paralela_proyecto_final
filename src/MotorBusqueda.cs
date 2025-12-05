@@ -100,7 +100,7 @@ namespace ProyectoFinalProgramacionParalela
             var archivos = EnumerarArchivos(conf.GetDirectorio(), "*.txt", SearchOption.AllDirectories);
             //Las concurrentbags sirven para recolectar datos de una forma thread-safe (osea, sin condiciones de carrera)
             var resultadosBag = new ConcurrentBag<string>();
-            Parallel.ForEach(archivos, opcionesParalelas,
+            Parallel.ForEach(archivos, conf.GetOpcionesParalelas(),
             (archivoPath) =>
             {
                 string textoArchivo = File.ReadAllText(archivoPath);
