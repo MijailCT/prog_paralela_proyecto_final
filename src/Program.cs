@@ -3,13 +3,6 @@
     public class Program
     {
 
-        public static void MostrarTablaArchivos(List<string> lista)
-        {
-            int archivoIdx = MostrarOpciones(lista, "Seleccione un archivo para abrir");
-            Console.WriteLine($"Abriendo el archivo {lista[archivoIdx - 1]}!");
-            MotorBusquedaSingleton.AbrirArchivo(lista[archivoIdx - 1]);
-        }
-
         public static int MostrarOpciones(List<string> lista,
         string seleccionTexto = "Seleccione un item",
         string seleccionCero = "Abortar seleccion")
@@ -37,6 +30,14 @@
             }
             return seleccionIdx == 0 ? -1 : seleccionIdx;
         }
+
+        public static void MostrarTablaArchivos(List<string> lista)
+        {
+            int archivoIdx = MostrarOpciones(lista, "Seleccione un archivo para abrir");
+            Console.WriteLine($"Abriendo el archivo {lista[archivoIdx - 1]}!");
+            MotorBusquedaSingleton.AbrirArchivo(lista[archivoIdx - 1]);
+        }
+
         public static async Task Busqueda()
         {
             Console.Clear();
