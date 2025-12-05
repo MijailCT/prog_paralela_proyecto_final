@@ -2,29 +2,33 @@
 {
     public class Program
     {
-        public static void MostrarTabla(List<string> lista)
+
+        public static int MostrarOpciones(List<string> lista,
+        string seleccionTexto = "Seleccione un item",
+        string seleccionCero = "Abortar seleccion")
         {
-            Console.WriteLine("0. Abortar seleccion");
+            Console.WriteLine($"0. {seleccionCero}");
             for (int i = 0; i < lista.Count; i++)
             {
                 Console.WriteLine($"{i + 1}. {lista[i]}");
             }
-            int archivoIdx = -1;
-            while (archivoIdx == -1)
+            int seleccionIdx = -1;
+            while (seleccionIdx == -1)
             {
-                Console.Write("Seleccione un archivo para abrir [0]: ");
+                Console.Write($"{seleccionTexto} [DEJAR VACIO para seleccionar 0]: ");
                 try
                 {
-                    archivoIdx = int.Parse(Console.ReadLine() ?? "0");
+                    string numeroStr = Console.ReadLine() ?? "0";
+                    if (numeroStr == "") numeroStr = "0";
+                    seleccionIdx = int.Parse(numeroStr);
                 }
                 catch (FormatException)
                 {
-                    archivoIdx = -1;
+                    seleccionIdx = -1;
                 }
-                if(archivoIdx > lista.Count || archivoIdx < 0) archivoIdx = -1;
+                if (seleccionIdx > lista.Count || seleccionIdx < 0) seleccionIdx = -1;
             }
-            Console.WriteLine($"Abriendo el archivo {lista[archivoIdx]}");
-            MotorBusquedaSingleton.AbrirArchivo(lista[archivoIdx]);
+            return seleccionIdx == 0 ? -1 : seleccionIdx;
         }
         public static async Task Main()
         {
