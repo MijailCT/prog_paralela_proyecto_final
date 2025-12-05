@@ -9,13 +9,10 @@ namespace ProyectoFinalProgramacionParalela
         private static MotorBusquedaSingleton instance = null;
         private static readonly object _lock = new object();
 
-        private string directorioTrabajo;
-        private ParallelOptions opcionesParalelas;
+        private Logs logsBusqueda = new Logs("busqueda-logs", nivel: LogsNivel.WARN);
 
-        MotorBusquedaSingleton(string directorio, ParallelOptions opt)
+        MotorBusquedaSingleton()
         {
-            directorioTrabajo = directorio;
-            opcionesParalelas = opt;
         }
 
         public static void AbrirArchivo(string path)
@@ -39,9 +36,10 @@ namespace ProyectoFinalProgramacionParalela
         
         public List<string> Buscar(string texto)
         {
+            var conf = ConfiguracionSingleton.Configuracion;
             //Enumeramos toooodos los archivos (incluyendo los que estan adentro de los directorios) de nuestro directorio de trabajo
             //TODO: reemplazarlo con una funcion que enumere los archivos y despues los organize segun los puntajes
-            var archivos = Directory.EnumerateFiles(directorioTrabajo, "*.txt", SearchOption.AllDirectories);
+            var archivos = Directory.EnumerateFiles(conf.GetDirectorio(), "*.txt", SearchOption.AllDirectories);
             //Las concurrentbags sirven para recolectar datos de una forma thread-safe (osea, sin condiciones de carrera)
             var resultadosBag = new ConcurrentBag<string>();
             Parallel.ForEach(archivos, opcionesParalelas,
@@ -67,7 +65,7 @@ namespace ProyectoFinalProgramacionParalela
                     if (instance == null)
                     {
                         var conf = ConfiguracionSingleton.Configuracion;
-                        instance = new MotorBusquedaSingleton(conf.GetDirectorio(), conf.GetOpcionesParalelas());
+                        instance = new MotorBusquedaSingleton();
                     }
                     return instance;
                 }
