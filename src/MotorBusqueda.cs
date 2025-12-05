@@ -97,8 +97,7 @@ namespace ProyectoFinalProgramacionParalela
         {
             var conf = ConfiguracionSingleton.Configuracion;
             //Enumeramos toooodos los archivos (incluyendo los que estan adentro de los directorios) de nuestro directorio de trabajo
-            //TODO: reemplazarlo con una funcion que enumere los archivos y despues los organize segun los puntajes
-            var archivos = Directory.EnumerateFiles(conf.GetDirectorio(), "*.txt", SearchOption.AllDirectories);
+            var archivos = EnumerarArchivos(conf.GetDirectorio(), "*.txt", SearchOption.AllDirectories);
             //Las concurrentbags sirven para recolectar datos de una forma thread-safe (osea, sin condiciones de carrera)
             var resultadosBag = new ConcurrentBag<string>();
             Parallel.ForEach(archivos, opcionesParalelas,
