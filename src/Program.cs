@@ -77,7 +77,7 @@
             Console.WriteLine();
             Console.WriteLine($"Buscando el texto \"{input}\" en archivos...");
             //metricas.EmpezarMedicion("Motor de busqueda"); (un suponer)
-            List<string> resultados = await motorBusqueda.Buscar(input);
+            List<string> resultados = motorBusqueda.Buscar(input);
             //metricas.TerminarMedicion("Motor de busqueda"); (un suponer)
             MostrarTablaArchivos(resultados);
         }
