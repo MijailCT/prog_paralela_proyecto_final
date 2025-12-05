@@ -34,6 +34,7 @@
         public static void MostrarTablaArchivos(List<string> lista)
         {
             int archivoIdx = MostrarOpciones(lista, "Seleccione un archivo para abrir");
+            if (archivoIdx == -1) return;
             Console.WriteLine($"Abriendo el archivo {lista[archivoIdx - 1]}!");
             MotorBusquedaSingleton.AbrirArchivo(lista[archivoIdx - 1]);
         }
