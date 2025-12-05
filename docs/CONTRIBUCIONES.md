@@ -7,3 +7,4 @@
 * Clase de Logs
 * Sistema de configuracion
 * Organizacion de todas las clases en archivos diferentes
+* Menu del programa + sub-menus
