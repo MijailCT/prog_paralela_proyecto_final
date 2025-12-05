@@ -103,11 +103,17 @@ namespace ProyectoFinalProgramacionParalela
             Parallel.ForEach(archivos, conf.GetOpcionesParalelas(),
             (archivoPath) =>
             {
-                string textoArchivo = File.ReadAllText(archivoPath);
-                if (textoArchivo.Contains(texto, StringComparison.OrdinalIgnoreCase))
+                try
                 {
-                    resultadosBag.Add(archivoPath);
-                    //DatosSingleton.Datos.IncrementarPuntaje(archivoPath); (un suponer)
+                    string textoArchivo = File.ReadAllText(archivoPath);
+                    if (textoArchivo.Contains(texto, StringComparison.OrdinalIgnoreCase))
+                    {
+                        resultadosBag.Add(archivoPath);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logsBusqueda.WriteLine($"No se pudo acceder al archivo {archivoPath} por el siguiente error: {ex.Message}", LogsNivel.ERROR);
                 }
             });
             
