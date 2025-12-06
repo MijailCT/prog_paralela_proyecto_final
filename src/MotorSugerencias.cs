@@ -41,7 +41,7 @@ namespace ProyectoFinalProgramacionParalela
         private readonly List<string> palabrasComunes;
         private readonly Dictionary<string, List<string>> bigramas;
 
-        private void ConstruirBigramas()
+        private void ConstruirBigramas() 
         {
             var frases = new[]
             {
@@ -65,5 +65,42 @@ namespace ProyectoFinalProgramacionParalela
                 }
             }
         }
+        private CancellationTokenSource cts;
+        private Task tareaEspeculativa;
+        private string sugerenciaActual = "";
+        private readonly object lockObj = new object();
+
+        public void ActualizarSugerencia(string textoActual)
+        {
+            cts?.Cancel();
+            cts = new CancellationTokenSource();
+
+            lock (lockObj) { sugerenciaActual = ""; }
+
+            var token = cts.Token;
+
+            tareaEspeculativa = Task.Run(() =>
+            {
+                try
+                {
+                    Thread.Sleep(150);
+                    if (token.IsCancellationRequested) return;
+
+                    var ultimaPalabra = ObtenerUltimaPalabra(textoActual);
+                    if (string.IsNullOrWhiteSpace(ultimaPalabra)) return;
+
+                    var prediccion = PredecirSiguientePalabra(ultimaPalabra);
+                    if (string.IsNullOrEmpty(prediccion)) return;
+
+                    lock (lockObj)
+                    {
+                        if (!token.IsCancellationRequested)
+                            sugerenciaActual = prediccion;
+                    }
+                }
+                catch { }
+            }, token);
+        }
+        
     }
 }
