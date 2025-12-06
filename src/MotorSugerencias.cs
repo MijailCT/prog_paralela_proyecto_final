@@ -9,7 +9,7 @@ namespace ProyectoFinalProgramacionParalela
 {
     public class MotorSugerenciasSingleton
     {
-        private static MotorSugerenciasSingleton instance = null;
+        private static MotorSugerenciasSingleton? instance = null;
         private static readonly object _lock = new object();
 
         private MotorSugerenciasSingleton()
@@ -22,6 +22,10 @@ namespace ProyectoFinalProgramacionParalela
             };
 
             bigramas = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            cts = new CancellationTokenSource();
+            tareaEspeculativa = Task.CompletedTask;
+            sugerenciaActual = string.Empty;
+            
             ConstruirBigramas();
         }
 
