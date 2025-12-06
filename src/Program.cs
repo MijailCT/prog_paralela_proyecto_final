@@ -53,9 +53,10 @@
             Console.WriteLine("Para buscar el texto en los archivos tienes que presionar la tecla ENTER.");
             Console.WriteLine("NOTA: Al darle a la tecla enter, se perdera la recomendacion.");
             Console.Write("Busqueda: ");
-
+            
             string input = "";
             ConsoleKeyInfo key;
+
             while ((key = Console.ReadKey(true)).Key != ConsoleKey.Enter)
             {
                 if (key.Key == ConsoleKey.Backspace)
@@ -66,14 +67,22 @@
                     Console.SetCursorPosition(left - 1, top);
                     Console.Write(' ');
                     Console.SetCursorPosition(left - 1, top);
-                    await Console.Out.FlushAsync(); //por si acaso
+                    await Console.Out.FlushAsync();
+                }
+                else if (key.Key == ConsoleKey.Tab)
+                {
+                    input = motorSugerencias.CompletarConTab(input);
+                    Console.Write(input.Split(' ').Last() + " ");
+                    continue;
                 }
                 else
                 {
                     input += key.KeyChar;
                     Console.Write(key.KeyChar);
                 }
-                //motorSugerencias.Predecir(input); (un suponer)
+
+                motorSugerencias.ActualizarSugerencia(input);
+                motorSugerencias.MostrarSugerencia();
             }
             Console.WriteLine();
             Console.WriteLine($"Buscando el texto \"{input}\" en archivos...");
