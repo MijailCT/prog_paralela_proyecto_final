@@ -37,5 +37,33 @@ namespace ProyectoFinalProgramacionParalela
                 }
             }
         }
+        
+        private readonly List<string> palabrasComunes;
+        private readonly Dictionary<string, List<string>> bigramas;
+
+        private void ConstruirBigramas()
+        {
+            var frases = new[]
+            {
+                "algoritmo paralelo", "programación multihilo", "buscar archivo",
+                "tarea especulativa", "sugerencia código", "rendimiento núcleo"
+            };
+
+            foreach (var frase in frases)
+            {
+                var palabras = frase.Split(' ');
+                for (int i = 0; i < palabras.Length - 1; i++)
+                {
+                    var actual = palabras[i];
+                    var siguiente = palabras[i + 1];
+
+                    if (!bigramas.ContainsKey(actual))
+                        bigramas[actual] = new List<string>();
+
+                    if (!bigramas[actual].Contains(siguiente))
+                        bigramas[actual].Add(siguiente);
+                }
+            }
+        }
     }
 }
