@@ -121,6 +121,42 @@ namespace ProyectoFinalProgramacionParalela
 
             return coincidencias.FirstOrDefault() ?? "";
         }
+        public string CompletarConTab(string textoActual)
+        {
+            lock (lockObj)
+            {
+                if (!string.IsNullOrEmpty(sugerenciaActual))
+                {
+                    var partes = textoActual.TrimEnd().Split(' ');
+                    if (partes.Length > 0)
+                        partes[partes.Length - 1] = sugerenciaActual;
+                    sugerenciaActual = "";
+                    return string.Join(" ", partes) + " ";
+                }
+            }
+            return textoActual;
+        }
+
+        public void RechazarSugerencia()
+        {
+            lock (lockObj) { sugerenciaActual = ""; }
+        }
+
+        public void MostrarSugerencia()
+        {
+            string sugerencia = "";
+            lock (lockObj) { sugerencia = sugerenciaActual; }
+
+            if (!string.IsNullOrEmpty(sugerencia))
+            {
+                var (left, top) = Console.GetCursorPosition();
+                Console.SetCursorPosition(left, top);
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write(sugerencia);
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.SetCursorPosition(left, top);
+            }
+        }
         
     }
 }
