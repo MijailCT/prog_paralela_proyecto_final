@@ -101,6 +101,26 @@ namespace ProyectoFinalProgramacionParalela
                 catch { }
             }, token);
         }
+        private string ObtenerUltimaPalabra(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return "";
+            var palabras = texto.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return palabras.LastOrDefault() ?? "";
+        }
+
+        private string PredecirSiguientePalabra(string palabraActual)
+        {
+            if (bigramas.TryGetValue(palabraActual, out var siguientes))
+                return siguientes.FirstOrDefault() ?? "";
+
+            var parcial = palabraActual.ToLower();
+            var coincidencias = palabrasComunes
+                .Where(p => p.StartsWith(parcial, StringComparison.OrdinalIgnoreCase))
+                .Except(new[] { palabraActual }, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            return coincidencias.FirstOrDefault() ?? "";
+        }
         
     }
 }
