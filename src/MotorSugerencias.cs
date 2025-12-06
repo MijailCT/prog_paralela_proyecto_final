@@ -25,7 +25,7 @@ namespace ProyectoFinalProgramacionParalela
             cts = new CancellationTokenSource();
             tareaEspeculativa = Task.CompletedTask;
             sugerenciaActual = string.Empty;
-            
+
             ConstruirBigramas();
         }
 
@@ -159,6 +159,13 @@ namespace ProyectoFinalProgramacionParalela
                 Console.Write(sugerencia);
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.SetCursorPosition(left, top);
+            }
+        }
+                public string ObtenerSugerenciaActual()
+        {
+            lock (lockObj)
+            {
+                return sugerenciaActual;
             }
         }
         

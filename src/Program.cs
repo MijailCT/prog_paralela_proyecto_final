@@ -53,43 +53,57 @@
             Console.WriteLine("Para buscar el texto en los archivos tienes que presionar la tecla ENTER.");
             Console.WriteLine("NOTA: Al darle a la tecla enter, se perdera la recomendacion.");
             Console.Write("Busqueda: ");
-            
             string input = "";
             ConsoleKeyInfo key;
 
             while ((key = Console.ReadKey(true)).Key != ConsoleKey.Enter)
             {
-                if (key.Key == ConsoleKey.Backspace)
+                if (key.Key == ConsoleKey.Backspace && input.Length > 0)
                 {
-                    if (input.Length == 0) continue;
                     input = input.Substring(0, input.Length - 1);
                     var (left, top) = Console.GetCursorPosition();
-                    Console.SetCursorPosition(left - 1, top);
+                    Console.SetCursorPosition(Math.Max(0, left - 1), top);
                     Console.Write(' ');
-                    Console.SetCursorPosition(left - 1, top);
-                    await Console.Out.FlushAsync();
+                    Console.SetCursorPosition(Math.Max(0, left - 1), top);
                 }
                 else if (key.Key == ConsoleKey.Tab)
                 {
                     input = motorSugerencias.CompletarConTab(input);
-                    Console.Write(input.Split(' ').Last() + " ");
+                    Console.Write(input.Split(' ').LastOrDefault() ?? "");
                     continue;
                 }
-                else
+                else if (!char.IsControl(key.KeyChar))
                 {
                     input += key.KeyChar;
                     Console.Write(key.KeyChar);
                 }
 
+                // ACTUALIZAR SUGERENCIA
                 motorSugerencias.ActualizarSugerencia(input);
-                motorSugerencias.MostrarSugerencia();
+                MostrarSugerenciaEnConsola(motorSugerencias);
             }
+
+            // ENTER: RECHAZAR Y BUSCAR
+            motorSugerencias.RechazarSugerencia();
             Console.WriteLine();
             Console.WriteLine($"Buscando el texto \"{input}\" en archivos...");
             //metricas.EmpezarMedicion("Motor de busqueda"); (un suponer)
             List<string> resultados = motorBusqueda.Buscar(input);
             //metricas.TerminarMedicion("Motor de busqueda"); (un suponer)
             MostrarTablaArchivos(resultados);
+        }
+        private static void MostrarSugerenciaEnConsola(MotorSugerenciasSingleton motor)
+        {
+            string sugerencia = motor.ObtenerSugerenciaActual();
+            if (!string.IsNullOrEmpty(sugerencia))
+            {
+                var (left, top) = Console.GetCursorPosition();
+                Console.SetCursorPosition(left, top);
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                Console.Write(sugerencia.PadRight(20));
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.SetCursorPosition(left, top);
+            }
         }
 
         public static async Task Configuracion()
@@ -108,7 +122,7 @@
                 "Hilos (para el modo custom)",
                 "Directorio de trabajo"
                 }, "Seleccione que opcion quiere configurar", "Ir hacia atras y guardar los cambios");
-                switch(seleccionConf - 1)
+                switch (seleccionConf - 1)
                 {
                     case 0:
                         conf.Cargar();
@@ -160,7 +174,7 @@
                 }
             }
         }
-        
+
         //Asincrono porque no podemos gastar tiempo de procesamiento haciendo nada 
         public static async Task Error(string texto)
         {
@@ -230,4 +244,4 @@
             }
         }
     }
-};
+}

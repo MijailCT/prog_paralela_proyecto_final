@@ -6,7 +6,7 @@ namespace ProyectoFinalProgramacionParalela
 {
     public class MotorBusquedaSingleton
     {
-        private static MotorBusquedaSingleton instance = null;
+        private static MotorBusquedaSingleton? instance = null;
         private static readonly object _lock = new object();
 
         private static Logs logsBusqueda = new Logs("busqueda-logs", nivel: LogsNivel.WARN);
