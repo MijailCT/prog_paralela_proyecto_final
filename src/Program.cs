@@ -1,7 +1,15 @@
-﻿namespace ProyectoFinalProgramacionParalela
+﻿using Spectre.Console;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+namespace ProyectoFinalProgramacionParalela
 {
     public class Program
     {
+
+        static List<string> diccionario = new();
 
         public static int MostrarOpciones(List<string> lista,
         string seleccionTexto = "Seleccione un item",
@@ -39,6 +47,73 @@
             MotorBusquedaSingleton.AbrirArchivo(lista[archivoIdx - 1]);
         }
 
+
+        static void CargarDiccionarioDesdeTXT(string carpeta)
+        {
+            diccionario.Clear();
+
+            if (!Directory.Exists(carpeta))
+            {
+                Console.WriteLine($"No existe la carpeta '{carpeta}'");
+                return;
+            }
+
+            var archivos = Directory.GetFiles(carpeta, "*.txt");
+
+            foreach (var archivo in archivos)
+            {
+                string texto = File.ReadAllText(archivo).ToLower();
+
+                var palabras = Regex.Matches(texto, @"\b[\wáéíóúñü]+\b")
+                                    .Select(m => m.Value)
+                                    .Distinct();
+
+                diccionario.AddRange(palabras);
+            }
+
+            diccionario = diccionario.Distinct().OrderBy(p => p).ToList();
+        }
+
+
+        static string ObtenerUltimaPalabra(string input)
+        {
+            var partes = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return partes.Length == 0 ? "" : partes[^1];
+        }
+
+
+        static string ObtenerResto(string input)
+        {
+            var index = input.LastIndexOf(' ');
+            if (index == -1) return "";
+            return input[..(index + 1)];
+        }
+
+        static string? BuscarCoincidencia(string palabra)
+        {
+            if (string.IsNullOrWhiteSpace(palabra))
+                return null;
+
+            return diccionario
+                .FirstOrDefault(p => p.StartsWith(palabra, StringComparison.OrdinalIgnoreCase));
+        }
+
+        static void PintarInputConGhost(string input)
+        {
+            Console.Write(input);
+
+            string ultima = ObtenerUltimaPalabra(input);
+            string resto = ObtenerResto(input);
+
+            string? sugerencia = BuscarCoincidencia(ultima);
+
+            if (sugerencia != null && sugerencia.Length > ultima.Length)
+            {
+                string fantasma = sugerencia[ultima.Length..];
+                AnsiConsole.Markup($"[grey]{fantasma}[/]");
+            }
+        }
+
         public static async Task Busqueda()
         {
             Console.Clear();
@@ -52,57 +127,57 @@
             "palabras que podria utilizar, estas pueden aceptarse con la tecla TAB.");
             Console.WriteLine("Para buscar el texto en los archivos tienes que presionar la tecla ENTER.");
             Console.WriteLine("NOTA: Al darle a la tecla enter, se perdera la recomendacion.");
-            Console.Write("Busqueda: ");
+
             string input = "";
             ConsoleKeyInfo key;
-
-            while ((key = Console.ReadKey(true)).Key != ConsoleKey.Enter)
+            while (true)
             {
-                if (key.Key == ConsoleKey.Backspace && input.Length > 0)
+                Console.Clear();
+                AnsiConsole.Markup("[green]Busqueda: [/]");
+                PintarInputConGhost(input);
+
+                key = Console.ReadKey(true);
+
+
+                if (key.Key == ConsoleKey.Enter)
                 {
-                    input = input.Substring(0, input.Length - 1);
-                    var (left, top) = Console.GetCursorPosition();
-                    Console.SetCursorPosition(Math.Max(0, left - 1), top);
-                    Console.Write(' ');
-                    Console.SetCursorPosition(Math.Max(0, left - 1), top);
-                }
-                else if (key.Key == ConsoleKey.Tab)
-                {
-                    input = motorSugerencias.CompletarConTab(input);
-                    Console.Write(input.Split(' ').LastOrDefault() ?? "");
+                    Console.WriteLine();
+                    Console.WriteLine($"Buscando el texto \"{input}\" en archivos...");
+                    List<string> resultados = motorBusqueda.Buscar(input);
+                    MostrarTablaArchivos(resultados);
+                    input = "";
+                    Console.WriteLine("Presiona cualquier tecla para continuar...");
+                    Console.ReadKey(true);
                     continue;
                 }
-                else if (!char.IsControl(key.KeyChar))
+
+
+                if (key.Key == ConsoleKey.Backspace)
                 {
-                    input += key.KeyChar;
-                    Console.Write(key.KeyChar);
+                    if (input.Length > 0)
+                        input = input[..^1];
+                    continue;
                 }
 
-                // ACTUALIZAR SUGERENCIA
-                motorSugerencias.ActualizarSugerencia(input);
-                MostrarSugerenciaEnConsola(motorSugerencias);
-            }
 
-            // ENTER: RECHAZAR Y BUSCAR
-            motorSugerencias.RechazarSugerencia();
-            Console.WriteLine();
-            Console.WriteLine($"Buscando el texto \"{input}\" en archivos...");
-            //metricas.EmpezarMedicion("Motor de busqueda"); (un suponer)
-            List<string> resultados = motorBusqueda.Buscar(input);
-            //metricas.TerminarMedicion("Motor de busqueda"); (un suponer)
-            MostrarTablaArchivos(resultados);
-        }
-        private static void MostrarSugerenciaEnConsola(MotorSugerenciasSingleton motor)
-        {
-            string sugerencia = motor.ObtenerSugerenciaActual();
-            if (!string.IsNullOrEmpty(sugerencia))
-            {
-                var (left, top) = Console.GetCursorPosition();
-                Console.SetCursorPosition(left, top);
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write(sugerencia.PadRight(20));
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.SetCursorPosition(left, top);
+                if (key.Key == ConsoleKey.Tab)
+                {
+                    string resto = ObtenerResto(input);
+                    string ultima = ObtenerUltimaPalabra(input);
+
+                    string? match = BuscarCoincidencia(ultima);
+
+                    if (match != null)
+                        input = resto + match;
+
+                    continue;
+                }
+
+                // Escribir caracteres
+                if (!char.IsControl(key.KeyChar))
+                {
+                    input += key.KeyChar;
+                }
             }
         }
 
@@ -122,7 +197,7 @@
                 "Hilos (para el modo custom)",
                 "Directorio de trabajo"
                 }, "Seleccione que opcion quiere configurar", "Ir hacia atras y guardar los cambios");
-                switch (seleccionConf - 1)
+                switch(seleccionConf - 1)
                 {
                     case 0:
                         conf.Cargar();
@@ -174,7 +249,7 @@
                 }
             }
         }
-
+        
         //Asincrono porque no podemos gastar tiempo de procesamiento haciendo nada 
         public static async Task Error(string texto)
         {
@@ -187,6 +262,9 @@
         public static async Task Main()
         {
             Console.Clear();
+            Console.CursorVisible = true;
+
+            CargarDiccionarioDesdeTXT("archivos");
             Logs debugLogs = new Logs(LogsNivel.DEBUG);
             ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
             DatosSingleton capaDatos = DatosSingleton.Datos;
@@ -244,4 +322,4 @@
             }
         }
     }
-}
+};

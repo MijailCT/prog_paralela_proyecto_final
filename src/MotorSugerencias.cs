@@ -12,21 +12,24 @@ namespace ProyectoFinalProgramacionParalela
         private static MotorSugerenciasSingleton? instance = null;
         private static readonly object _lock = new object();
 
+        private readonly HashSet<string> diccionario;
+        private readonly Dictionary<string, List<string>> bigramas;
+
+        private CancellationTokenSource cts;
+        private readonly object lockObj = new object();
+
+        
+        private string autocompletadoReal = "";
+        private string sugerenciaVisible = "";
+
         private MotorSugerenciasSingleton()
         {
-            palabrasComunes = new List<string>
-            {
-                "algoritmo", "paralelo", "hilo", "tarea", "buscar", "archivo", "texto",
-                "especulativo", "predicción", "sugerencia", "compleción", "código",
-                "programación", "multihilo", "procesador", "núcleo", "rendimiento"
-            };
-
+            diccionario = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             bigramas = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-            cts = new CancellationTokenSource();
-            tareaEspeculativa = Task.CompletedTask;
-            sugerenciaActual = string.Empty;
 
-            ConstruirBigramas();
+            cts = new CancellationTokenSource();
+
+            CargarDiccionarioYBigramas();
         }
 
         public static MotorSugerenciasSingleton MotorSugerencias
@@ -35,139 +38,194 @@ namespace ProyectoFinalProgramacionParalela
             {
                 lock (_lock)
                 {
-                    if (instance == null)
-                        instance = new MotorSugerenciasSingleton();
+                    instance ??= new MotorSugerenciasSingleton();
                     return instance;
                 }
             }
         }
-        
-        private readonly List<string> palabrasComunes;
-        private readonly Dictionary<string, List<string>> bigramas;
 
-        private void ConstruirBigramas() 
+        private void CargarDiccionarioYBigramas()
         {
-            var frases = new[]
-            {
-                "algoritmo paralelo", "programación multihilo", "buscar archivo",
-                "tarea especulativa", "sugerencia código", "rendimiento núcleo"
-            };
+            string dir = ConfiguracionSingleton.Configuracion.GetDirectorio();
+            if (!Directory.Exists(dir)) return;
 
-            foreach (var frase in frases)
-            {
-                var palabras = frase.Split(' ');
-                for (int i = 0; i < palabras.Length - 1; i++)
-                {
-                    var actual = palabras[i];
-                    var siguiente = palabras[i + 1];
+            var archivos = Directory.EnumerateFiles(dir, "*.txt", SearchOption.AllDirectories);
 
-                    if (!bigramas.ContainsKey(actual))
-                        bigramas[actual] = new List<string>();
-
-                    if (!bigramas[actual].Contains(siguiente))
-                        bigramas[actual].Add(siguiente);
-                }
-            }
-        }
-        private CancellationTokenSource cts;
-        private Task tareaEspeculativa;
-        private string sugerenciaActual = "";
-        private readonly object lockObj = new object();
-
-        public void ActualizarSugerencia(string textoActual)
-        {
-            cts?.Cancel();
-            cts = new CancellationTokenSource();
-
-            lock (lockObj) { sugerenciaActual = ""; }
-
-            var token = cts.Token;
-
-            tareaEspeculativa = Task.Run(() =>
+            foreach (var archivo in archivos)
             {
                 try
                 {
-                    Thread.Sleep(150);
+                    var texto = File.ReadAllText(archivo);
+                    var palabras = texto.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    for (int i = 0; i < palabras.Length; i++)
+                    {
+                        var actual = Normalizar(palabras[i]);
+                        if (!string.IsNullOrWhiteSpace(actual))
+                            diccionario.Add(actual);
+
+                        if (i < palabras.Length - 1)
+                        {
+                            var siguiente = Normalizar(palabras[i + 1]);
+                            if (string.IsNullOrWhiteSpace(siguiente)) continue;
+
+                            if (!bigramas.ContainsKey(actual))
+                                bigramas[actual] = new List<string>();
+
+                            if (!bigramas[actual].Contains(siguiente))
+                                bigramas[actual].Add(siguiente);
+                        }
+                    }
+                }
+                catch { }
+            }
+        }
+
+        private string Normalizar(string p) => p.Trim().ToLower();
+
+        
+        public void ActualizarSugerencia(string input)
+        {
+            cts?.Cancel();
+            cts = new CancellationTokenSource();
+            var token = cts.Token;
+
+            lock (lockObj)
+            {
+                autocompletadoReal = "";
+                sugerenciaVisible = "";
+            }
+
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    Thread.Sleep(50); 
                     if (token.IsCancellationRequested) return;
 
-                    var ultimaPalabra = ObtenerUltimaPalabra(textoActual);
-                    if (string.IsNullOrWhiteSpace(ultimaPalabra)) return;
+                    if (string.IsNullOrEmpty(input)) return;
 
-                    var prediccion = PredecirSiguientePalabra(ultimaPalabra);
-                    if (string.IsNullOrEmpty(prediccion)) return;
+                    
+                    bool terminaConEspacio = input.EndsWith(" ");
+                    var partes = input.TrimEnd().Split(' ');
+                    string ultima = partes.LastOrDefault() ?? "";
+                    ultima = Normalizar(ultima);
 
-                    lock (lockObj)
+                    
+                    if (terminaConEspacio)
                     {
-                        if (!token.IsCancellationRequested)
-                            sugerenciaActual = prediccion;
+                        // buscar bigrama
+                        if (bigramas.TryGetValue(ultima, out var siguientes) && siguientes.Count > 0)
+                        {
+                            var siguiente = siguientes.FirstOrDefault();
+                            if (!string.IsNullOrWhiteSpace(siguiente))
+                            {
+                                lock (lockObj)
+                                {
+                                    autocompletadoReal = siguiente;
+                                    sugerenciaVisible = siguiente; 
+                                }
+                                return;
+                            }
+                        }
+
+                        // Si no hay bigrama, no sugerimos nada
+                        return;
+                    }
+
+                    // Si no hay espacio final: intentar autocompletar la palabra actual por prefijo
+                    var match = diccionario
+                        .Where(p => p.StartsWith(ultima, StringComparison.OrdinalIgnoreCase))
+                        .OrderBy(p => p.Length)
+                        .FirstOrDefault();
+
+                    if (!string.IsNullOrWhiteSpace(match) && match != ultima)
+                    {
+                        lock (lockObj)
+                        {
+                            autocompletadoReal = match;
+                            sugerenciaVisible = match.Substring(ultima.Length);
+                        }
+                        return;
+                    }
+
+                    
+                    if (bigramas.TryGetValue(ultima, out var lista) && lista.Count > 0)
+                    {
+                        var next = lista.FirstOrDefault();
+                        if (!string.IsNullOrWhiteSpace(next))
+                        {
+                            lock (lockObj)
+                            {
+                                autocompletadoReal = next;
+                                sugerenciaVisible = " " + next; 
+                            }
+                        }
                     }
                 }
                 catch { }
             }, token);
         }
-        private string ObtenerUltimaPalabra(string texto)
+
+        // Devuelve lo que se debe mostrar como ghost-text (puede empezar por espacio)
+        public string ObtenerGhostText()
         {
-            if (string.IsNullOrWhiteSpace(texto)) return "";
-            var palabras = texto.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            return palabras.LastOrDefault() ?? "";
+            lock (lockObj) return sugerenciaVisible;
         }
 
-        private string PredecirSiguientePalabra(string palabraActual)
+        public bool HaySugerencia()
         {
-            if (bigramas.TryGetValue(palabraActual, out var siguientes))
-                return siguientes.FirstOrDefault() ?? "";
-
-            var parcial = palabraActual.ToLower();
-            var coincidencias = palabrasComunes
-                .Where(p => p.StartsWith(parcial, StringComparison.OrdinalIgnoreCase))
-                .Except(new[] { palabraActual }, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            return coincidencias.FirstOrDefault() ?? "";
+            lock (lockObj) return !string.IsNullOrEmpty(autocompletadoReal);
         }
-        public string CompletarConTab(string textoActual)
+
+        // Completa con TAB y limpia estado interno para evitar duplicados
+        public string CompletarConTab(string input)
         {
             lock (lockObj)
             {
-                if (!string.IsNullOrEmpty(sugerenciaActual))
+                if (string.IsNullOrWhiteSpace(autocompletadoReal))
+                    return input;
+
+                string result = input;
+
+                
+                if (input.EndsWith(" "))
                 {
-                    var partes = textoActual.TrimEnd().Split(' ');
-                    if (partes.Length > 0)
-                        partes[partes.Length - 1] = sugerenciaActual;
-                    sugerenciaActual = "";
-                    return string.Join(" ", partes) + " ";
+                    result = input + autocompletadoReal + " ";
                 }
+                else
+                {
+                    
+                    var partes = input.Split(' ').ToList();
+                    string ultima = partes.LastOrDefault() ?? "";
+                    if (!string.IsNullOrEmpty(ultima) && autocompletadoReal.StartsWith(ultima, StringComparison.OrdinalIgnoreCase))
+                    {
+                        partes[partes.Count - 1] = autocompletadoReal;
+                        result = string.Join(" ", partes) + " ";
+                    }
+                    else
+                    {
+                        
+                        result = input + " " + autocompletadoReal + " ";
+                    }
+                }
+
+                
+                autocompletadoReal = "";
+                sugerenciaVisible = "";
+
+                return result;
             }
-            return textoActual;
         }
 
+        
         public void RechazarSugerencia()
         {
-            lock (lockObj) { sugerenciaActual = ""; }
-        }
-
-        public void MostrarSugerencia()
-        {
-            string sugerencia = "";
-            lock (lockObj) { sugerencia = sugerenciaActual; }
-
-            if (!string.IsNullOrEmpty(sugerencia))
-            {
-                var (left, top) = Console.GetCursorPosition();
-                Console.SetCursorPosition(left, top);
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.Write(sugerencia);
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.SetCursorPosition(left, top);
-            }
-        }
-                public string ObtenerSugerenciaActual()
-        {
             lock (lockObj)
             {
-                return sugerenciaActual;
+                autocompletadoReal = "";
+                sugerenciaVisible = "";
             }
         }
-        
     }
 }
