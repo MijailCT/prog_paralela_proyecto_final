@@ -114,7 +114,7 @@ namespace ProyectoFinalProgramacionParalela
 
             //Las concurrentbags sirven para recolectar datos de una forma thread-safe (osea, sin condiciones de carrera)
             var resultadosBag = new ConcurrentBag<string>();
-            Parallel.ForEach(archivos, conf.GetOpcionesParalelas(),
+            Parallel.ForEach(archivosOrganizadosPuntaje, conf.GetOpcionesParalelas(),
             (archivoPath) =>
             {
                 try
