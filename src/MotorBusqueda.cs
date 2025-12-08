@@ -101,8 +101,17 @@ namespace ProyectoFinalProgramacionParalela
         public List<string> Buscar(string texto)
         {
             var conf = ConfiguracionSingleton.Configuracion;
+            var datos = DatosSingleton.Datos;
             //Enumeramos toooodos los archivos (incluyendo los que estan adentro de los directorios) de nuestro directorio de trabajo
             var archivos = EnumerarArchivos(conf.GetDirectorio(), "*.txt", SearchOption.AllDirectories);
+
+            //Buscamos el puntaje de cada archivo y los ordenamos
+            var archivosOrganizadosPuntaje = archivos
+            .Select(r => new { ruta = r, puntaje = ObtenerPuntaje_dummy(r) })
+            //.Select(ruta => new { ruta = ruta, puntaje = datos.ObtenerPuntaje(ruta) }) //Por ahora comentado hasta que la capa de datos este lista
+            .OrderByDescending(r => r.puntaje)
+            .Select(r => r.ruta).ToList(); //Al final convertimos la lista a la normalidad para no afectar al Parallel.ForEach
+
             //Las concurrentbags sirven para recolectar datos de una forma thread-safe (osea, sin condiciones de carrera)
             var resultadosBag = new ConcurrentBag<string>();
             Parallel.ForEach(archivos, conf.GetOpcionesParalelas(),
