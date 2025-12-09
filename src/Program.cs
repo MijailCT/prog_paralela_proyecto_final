@@ -56,19 +56,58 @@ namespace ProyectoFinalProgramacionParalela
             MetricasSingleton metricas = MetricasSingleton.Metricas;
 
             string input = "";
-            ConsoleKeyInfo key;
+            string? sugerenciaActual = null;
+            string ultimoInputProcesado = "";
             while (true)
             {
+                //Si el input cambio, lanzamos una sugerencia pero para la version capturada nadamas
+                if (input != ultimoInputProcesado)
+                {
+                    ultimoInputProcesado = input;
+                    string captured = input; //Capturamos el input
+                    //Obtenemos la ultima palabra, pero del input
+                    string ultimaParaCaptured = motorSugerencias.ObtenerUltimaPalabra(captured);
+
+                    //Para matar la warning lo asignamos a _
+                    //Y para no bloquear lo hacemos de forma paralela
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            //Buscamos la coincidencia con el input que capturamos
+                            var coincidencia = await motorSugerencias.BuscarCoincidenciaAsync(ultimaParaCaptured);
+                            //Si hemos podido procesar antes de que el usuario cambie el input, la sugerimos
+                            //Esto es para evitar condiciones de carrera
+                            if (captured == ultimoInputProcesado)
+                                sugerenciaActual = coincidencia;
+                        }
+                        //Por si acaso agarramos errores
+                        catch (OperationCanceledException) { }
+                        catch (Exception) { }
+                    });
+                }
+
                 Console.Clear();
                 Console.WriteLine("[Busqueda de texto en archivos]");
                 Console.WriteLine("Escribe tu busqueda, al iniciar se le recomendara " +
                 "palabras que podria utilizar, estas pueden aceptarse con la tecla TAB.");
                 Console.WriteLine("Para buscar el texto en los archivos tienes que presionar la tecla ENTER.");
                 Console.WriteLine("NOTA: Al darle a la tecla enter, se perdera la recomendacion y se hara la busqueda.");
-                AnsiConsole.Markup("[green]Busqueda: [/]");
-                motorSugerencias.PintarInputConGhost(input);
 
-                key = Console.ReadKey(true);
+                AnsiConsole.Markup("[green]Busqueda: [/]");
+                Console.Write(input);
+
+                //Printeamos la sugerencia como texto fantasma
+                string ultima2 = motorSugerencias.ObtenerUltimaPalabra(input);
+                if (!string.IsNullOrEmpty(sugerenciaActual) &&
+                    sugerenciaActual.StartsWith(ultima2, StringComparison.OrdinalIgnoreCase) &&
+                    sugerenciaActual.Length > ultima2.Length)
+                {
+                    string fantasma = sugerenciaActual[ultima2.Length..];
+                    AnsiConsole.Markup($"[grey]{fantasma}[/]");
+                }
+
+                var key = Console.ReadKey(true);
 
                 if (key.Key == ConsoleKey.Enter)
                 {
@@ -76,36 +115,32 @@ namespace ProyectoFinalProgramacionParalela
                     Console.WriteLine($"Buscando el texto \"{input}\" en archivos...");
                     List<string> resultados = motorBusqueda.Buscar(input);
                     MostrarTablaArchivos(resultados);
+                    //Limpiamos las variables de input, sugerenciaActual y ultimoInputProcesado por si acaso
                     input = "";
+                    sugerenciaActual = null;
+                    ultimoInputProcesado = "";
                     break;
                 }
-
-
-                if (key.Key == ConsoleKey.Backspace)
+                else if (key.Key == ConsoleKey.Backspace)
                 {
-                    if (input.Length > 0)
-                        input = input[..^1];
-                    await Console.Out.FlushAsync();
-                    continue;
+                    //..^1 significa que excluye el item final
+                    if (input.Length > 0) input = input[..^1];
                 }
-
-
-                if (key.Key == ConsoleKey.Tab)
+                else if (key.Key == ConsoleKey.Tab)
                 {
-                    string resto = motorSugerencias.ObtenerResto(input);
-                    string ultima = motorSugerencias.ObtenerUltimaPalabra(input);
-
-                    string? match = motorSugerencias.BuscarCoincidencia(ultima);
-
-                    if (match != null)
-                        input = resto + match;
-
-                    continue;
+                    if (sugerenciaActual != null)
+                    {
+                        string resto = motorSugerencias.ObtenerResto(input);
+                        input = resto + sugerenciaActual;
+                        //Actualizamos el ultimo input procesado y 
+                        // limpiamos la sugerencia actual para recomputar
+                        sugerenciaActual = null;
+                        ultimoInputProcesado = input;
+                    }
                 }
-
-                // Escribir caracteres
-                if (!char.IsControl(key.KeyChar))
+                else if (!char.IsControl(key.KeyChar))
                 {
+                    //Escribir los caracteres
                     input += key.KeyChar;
                 }
             }
