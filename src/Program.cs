@@ -1,4 +1,10 @@
-﻿namespace ProyectoFinalProgramacionParalela
+﻿using Spectre.Console;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace ProyectoFinalProgramacionParalela
 {
     public class Program
     {
@@ -39,48 +45,70 @@
             MotorBusquedaSingleton.AbrirArchivo(lista[archivoIdx - 1]);
         }
 
+
         public static async Task Busqueda()
         {
             Console.Clear();
-            Console.WriteLine("[Busqueda de texto en archivos]");
+            
             DatosSingleton capaDatos = DatosSingleton.Datos;
             MotorBusquedaSingleton motorBusqueda = MotorBusquedaSingleton.MotorBusqueda;
             MotorSugerenciasSingleton motorSugerencias = MotorSugerenciasSingleton.MotorSugerencias;
             MetricasSingleton metricas = MetricasSingleton.Metricas;
 
-            Console.WriteLine("Escribe tu busqueda, al iniciar se le recomendara " +
-            "palabras que podria utilizar, estas pueden aceptarse con la tecla TAB.");
-            Console.WriteLine("Para buscar el texto en los archivos tienes que presionar la tecla ENTER.");
-            Console.WriteLine("NOTA: Al darle a la tecla enter, se perdera la recomendacion.");
-            Console.Write("Busqueda: ");
-
             string input = "";
             ConsoleKeyInfo key;
-            while ((key = Console.ReadKey(true)).Key != ConsoleKey.Enter)
+            while (true)
             {
+                Console.Clear();
+                Console.WriteLine("[Busqueda de texto en archivos]");
+                Console.WriteLine("Escribe tu busqueda, al iniciar se le recomendara " +
+                "palabras que podria utilizar, estas pueden aceptarse con la tecla TAB.");
+                Console.WriteLine("Para buscar el texto en los archivos tienes que presionar la tecla ENTER.");
+                Console.WriteLine("NOTA: Al darle a la tecla enter, se perdera la recomendacion y se hara la busqueda.");
+                AnsiConsole.Markup("[green]Busqueda: [/]");
+                motorSugerencias.PintarInputConGhost(input);
+
+                key = Console.ReadKey(true);
+
+                if (key.Key == ConsoleKey.Enter)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"Buscando el texto \"{input}\" en archivos...");
+                    List<string> resultados = motorBusqueda.Buscar(input);
+                    MostrarTablaArchivos(resultados);
+                    input = "";
+                    break;
+                }
+
+
                 if (key.Key == ConsoleKey.Backspace)
                 {
-                    if (input.Length == 0) continue;
-                    input = input.Substring(0, input.Length - 1);
-                    var (left, top) = Console.GetCursorPosition();
-                    Console.SetCursorPosition(left - 1, top);
-                    Console.Write(' ');
-                    Console.SetCursorPosition(left - 1, top);
-                    await Console.Out.FlushAsync(); //por si acaso
+                    if (input.Length > 0)
+                        input = input[..^1];
+                    await Console.Out.FlushAsync();
+                    continue;
                 }
-                else
+
+
+                if (key.Key == ConsoleKey.Tab)
+                {
+                    string resto = motorSugerencias.ObtenerResto(input);
+                    string ultima = motorSugerencias.ObtenerUltimaPalabra(input);
+
+                    string? match = motorSugerencias.BuscarCoincidencia(ultima);
+
+                    if (match != null)
+                        input = resto + match;
+
+                    continue;
+                }
+
+                // Escribir caracteres
+                if (!char.IsControl(key.KeyChar))
                 {
                     input += key.KeyChar;
-                    Console.Write(key.KeyChar);
                 }
-                //motorSugerencias.Predecir(input); (un suponer)
             }
-            Console.WriteLine();
-            Console.WriteLine($"Buscando el texto \"{input}\" en archivos...");
-            //metricas.EmpezarMedicion("Motor de busqueda"); (un suponer)
-            List<string> resultados = motorBusqueda.Buscar(input);
-            //metricas.TerminarMedicion("Motor de busqueda"); (un suponer)
-            MostrarTablaArchivos(resultados);
         }
 
         public static async Task Configuracion()
@@ -164,12 +192,17 @@
         public static async Task Main()
         {
             Console.Clear();
+            Console.CursorVisible = true;
+
             Logs debugLogs = new Logs(LogsNivel.DEBUG);
             ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
             DatosSingleton capaDatos = DatosSingleton.Datos;
             MetricasSingleton metricas = MetricasSingleton.Metricas;
-
-            Console.WriteLine("Buscador de texto en archivos V0.1");
+            //TODO: hacer esto asincrono o optimizar de alguna manera
+            MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT(conf.GetDirectorio());
+            //archivo de prueba
+            //MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT("src/archivos");
+            Console.WriteLine("Buscador de texto en archivos V0.5");
 
             if (!conf.GetLanzadoPrimeraVez())
             {
