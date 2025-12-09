@@ -156,6 +156,7 @@ namespace ProyectoFinalProgramacionParalela
                 {
                     if (input.Length > 0)
                         input = input[..^1];
+                    await Console.Out.FlushAsync();
                     continue;
                 }
 
