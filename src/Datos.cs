@@ -10,7 +10,7 @@ namespace ProyectoFinalProgramacionParalela
     //OJO: Capa de datos
     public sealed class DatosSingleton
     {
-        private static DatosSingleton instance = null;
+        private static DatosSingleton? instance = null;
         private static readonly object _lock = new object();
 
         private readonly string dbPath = "prog_paralela_proyecto.db";
@@ -33,7 +33,7 @@ namespace ProyectoFinalProgramacionParalela
                 {
                     if (instance == null)
                     {
-                        instance = new DatosSingleton();
+                        instance ??= new DatosSingleton();
                     }
                     return instance;
                 }
@@ -128,6 +128,34 @@ namespace ProyectoFinalProgramacionParalela
                 cmd.ExecuteNonQuery();
             });
         }
+
+        // COMMIT DE HOY - Indexación paralela + ExisteDocumento
+        public async Task IndexarDirectorioAsync(string directorio)
+        {
+            if (!Directory.Exists(directorio)) return;
+
+            var archivos = Directory.EnumerateFiles(directorio, "*.txt", SearchOption.AllDirectories);
+            var opciones = ConfiguracionSingleton.Configuracion.GetOpcionesParalelas();
+
+            await Parallel.ForEachAsync(archivos, opciones, async (archivo, token) =>
+            {
+                try
+                {
+                    string contenido = await File.ReadAllTextAsync(archivo, token);
+                    await GuardarDocumentoAsync(archivo, contenido);
+                }
+                catch { }
+            });
+        }
+
+        public bool ExisteDocumento(string ruta)
+        {
+            using var conn = new SqliteConnection(connectionString);
+            conn.Open();
+            const string sql = "SELECT COUNT(*) FROM Documentos WHERE Ruta = @ruta LIMIT 1";
+            using var cmd = new SqliteCommand(sql, conn);
+            cmd.Parameters.AddWithValue("@ruta", ruta);
+            return (long?)cmd.ExecuteScalar() > 0;
+        }
     }
 }
-
