@@ -3,13 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+
 namespace ProyectoFinalProgramacionParalela
 {
     public class Program
     {
-
-        static List<string> diccionario = new();
 
         public static int MostrarOpciones(List<string> lista,
         string seleccionTexto = "Seleccione un item",
@@ -48,96 +46,31 @@ namespace ProyectoFinalProgramacionParalela
         }
 
 
-        static void CargarDiccionarioDesdeTXT(string carpeta)
-        {
-            diccionario.Clear();
 
-            if (!Directory.Exists(carpeta))
-            {
-                Console.WriteLine($"No existe la carpeta '{carpeta}'");
-                return;
-            }
-
-            var archivos = Directory.GetFiles(carpeta, "*.txt");
-
-            foreach (var archivo in archivos)
-            {
-                string texto = File.ReadAllText(archivo).ToLower();
-
-                var palabras = Regex.Matches(texto, @"\b[\wáéíóúñü]+\b")
-                                    .Select(m => m.Value)
-                                    .Distinct();
-
-                diccionario.AddRange(palabras);
-            }
-
-            diccionario = diccionario.Distinct().OrderBy(p => p).ToList();
-        }
-
-
-        static string ObtenerUltimaPalabra(string input)
-        {
-            var partes = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            return partes.Length == 0 ? "" : partes[^1];
-        }
-
-
-        static string ObtenerResto(string input)
-        {
-            var index = input.LastIndexOf(' ');
-            if (index == -1) return "";
-            return input[..(index + 1)];
-        }
-
-        static string? BuscarCoincidencia(string palabra)
-        {
-            if (string.IsNullOrWhiteSpace(palabra))
-                return null;
-
-            return diccionario
-                .FirstOrDefault(p => p.StartsWith(palabra, StringComparison.OrdinalIgnoreCase));
-        }
-
-        static void PintarInputConGhost(string input)
-        {
-            Console.Write(input);
-
-            string ultima = ObtenerUltimaPalabra(input);
-            string resto = ObtenerResto(input);
-
-            string? sugerencia = BuscarCoincidencia(ultima);
-
-            if (sugerencia != null && sugerencia.Length > ultima.Length)
-            {
-                string fantasma = sugerencia[ultima.Length..];
-                AnsiConsole.Markup($"[grey]{fantasma}[/]");
-            }
-        }
 
         public static async Task Busqueda()
         {
             Console.Clear();
-            Console.WriteLine("[Busqueda de texto en archivos]");
+            
             DatosSingleton capaDatos = DatosSingleton.Datos;
             MotorBusquedaSingleton motorBusqueda = MotorBusquedaSingleton.MotorBusqueda;
             MotorSugerenciasSingleton motorSugerencias = MotorSugerenciasSingleton.MotorSugerencias;
             MetricasSingleton metricas = MetricasSingleton.Metricas;
-
-            Console.WriteLine("Escribe tu busqueda, al iniciar se le recomendara " +
-            "palabras que podria utilizar, estas pueden aceptarse con la tecla TAB.");
-            Console.WriteLine("Para buscar el texto en los archivos tienes que presionar la tecla ENTER.");
-            Console.WriteLine("NOTA: Al darle a la tecla enter, se perdera la recomendacion.");
 
             string input = "";
             ConsoleKeyInfo key;
             while (true)
             {
                 Console.Clear();
+                Console.WriteLine("[Busqueda de texto en archivos]");
+                Console.WriteLine("Escribe tu busqueda, al iniciar se le recomendara " +
+                "palabras que podria utilizar, estas pueden aceptarse con la tecla TAB.");
+                Console.WriteLine("Para buscar el texto en los archivos tienes que presionar la tecla ENTER.");
+                Console.WriteLine("NOTA: Al darle a la tecla enter, se perdera la recomendacion y se hara la busqueda.");
                 AnsiConsole.Markup("[green]Busqueda: [/]");
-                PintarInputConGhost(input);
+                motorSugerencias.PintarInputConGhost(input);
 
                 key = Console.ReadKey(true);
-
 
                 if (key.Key == ConsoleKey.Enter)
                 {
@@ -146,9 +79,7 @@ namespace ProyectoFinalProgramacionParalela
                     List<string> resultados = motorBusqueda.Buscar(input);
                     MostrarTablaArchivos(resultados);
                     input = "";
-                    Console.WriteLine("Presiona cualquier tecla para continuar...");
-                    Console.ReadKey(true);
-                    continue;
+                    break;
                 }
 
 
@@ -163,10 +94,10 @@ namespace ProyectoFinalProgramacionParalela
 
                 if (key.Key == ConsoleKey.Tab)
                 {
-                    string resto = ObtenerResto(input);
-                    string ultima = ObtenerUltimaPalabra(input);
+                    string resto = motorSugerencias.ObtenerResto(input);
+                    string ultima = motorSugerencias.ObtenerUltimaPalabra(input);
 
-                    string? match = BuscarCoincidencia(ultima);
+                    string? match = motorSugerencias.BuscarCoincidencia(ultima);
 
                     if (match != null)
                         input = resto + match;
@@ -265,11 +196,11 @@ namespace ProyectoFinalProgramacionParalela
             Console.Clear();
             Console.CursorVisible = true;
 
-            CargarDiccionarioDesdeTXT("src/archivos");
             Logs debugLogs = new Logs(LogsNivel.DEBUG);
             ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
             DatosSingleton capaDatos = DatosSingleton.Datos;
             MetricasSingleton metricas = MetricasSingleton.Metricas;
+            MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT("src/archivos");
 
             Console.WriteLine("Buscador de texto en archivos V0.1");
 
