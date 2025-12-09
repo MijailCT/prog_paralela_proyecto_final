@@ -17,14 +17,7 @@ namespace ProyectoFinalProgramacionParalela
         private static Logs logsSugerencias = new Logs(LogsNivel.ERROR);
 
         private List<string> diccionario;
-        private readonly Dictionary<string, List<string>> bigramas;
-
-        private CancellationTokenSource cts;
-        private readonly object lockObj = new object();
-
-        
-        private string autocompletadoReal = "";
-        private string sugerenciaVisible = "";
+    
 
         MotorSugerenciasSingleton()
         {
