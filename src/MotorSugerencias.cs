@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
+using Spectre.Console;
 
 namespace ProyectoFinalProgramacionParalela
 {
@@ -14,7 +16,7 @@ namespace ProyectoFinalProgramacionParalela
 
         private static Logs logsSugerencias = new Logs(LogsNivel.ERROR);
 
-        private readonly HashSet<string> diccionario;
+        private List<string> diccionario;
         private readonly Dictionary<string, List<string>> bigramas;
 
         private CancellationTokenSource cts;
@@ -24,14 +26,9 @@ namespace ProyectoFinalProgramacionParalela
         private string autocompletadoReal = "";
         private string sugerenciaVisible = "";
 
-        private MotorSugerenciasSingleton()
+        MotorSugerenciasSingleton()
         {
-            diccionario = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            bigramas = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
-
-            cts = new CancellationTokenSource();
-
-            CargarDiccionarioYBigramas();
+            diccionario = new();
         }
 
         public static MotorSugerenciasSingleton MotorSugerencias
@@ -45,244 +42,69 @@ namespace ProyectoFinalProgramacionParalela
                 }
             }
         }
-
-        //TODO: hacer una funcion EnumerarArchivos en general para no repetir codigo
-        public static IEnumerable<string> EnumerarArchivos(string directorioActual, string patron, SearchOption opcionesBusqueda)
+        public void CargarDiccionarioDesdeTXT(string carpeta)
         {
-            //Enumeramos el directorio actual, pero agarramos errores para que no explote todo
-            IEnumerable<string>? archivos = null;
-            try
+            diccionario.Clear();
+
+            if (!Directory.Exists(carpeta))
             {
-                archivos = Directory.EnumerateFiles(directorioActual, patron, SearchOption.TopDirectoryOnly);
-            }
-            catch (UnauthorizedAccessException)
-            {
-                logsSugerencias.WriteLine($"No se pudo acceder al directorio {directorioActual}!", LogsNivel.ERROR);
-            }
-            catch (Exception ex)
-            {
-                logsSugerencias.WriteLine($"No se pudo acceder al directorio {directorioActual} por el siguiente error: {ex.Message}", LogsNivel.ERROR);
+                Console.WriteLine($"No existe la carpeta '{carpeta}'");
+                return;
             }
 
-            //Si fallamos con enumerar los archivos, nos retiramos y el iterador termina aqui
-            if (archivos == null) yield break;
+            var archivos = Directory.GetFiles(carpeta, "*.txt");
 
             foreach (var archivo in archivos)
             {
-                yield return archivo;
+                string texto = File.ReadAllText(archivo).ToLower();
+
+                var palabras = Regex.Matches(texto, @"\b[\wáéíóúñü]+\b")
+                                    .Select(m => m.Value)
+                                    .Distinct();
+
+                diccionario.AddRange(palabras);
             }
 
-            //Si realmente queremos rebuscar en todo entonces a enumerar los demas directorios
-            if (opcionesBusqueda == SearchOption.AllDirectories)
-            {
-                IEnumerable<string>? subdirectorios = null;
-                //Por si acaso, uno nunca sabe...
-                try
-                {
-                    subdirectorios = Directory.EnumerateDirectories(directorioActual);
-                }
-                catch (UnauthorizedAccessException)
-                {
-                    logsSugerencias.WriteLine($"No se pudo leer los subdirectorios de {directorioActual}!", LogsNivel.ERROR);
-                }
-                catch (Exception ex)
-                {
-                    logsSugerencias.WriteLine($"No se pudo leer los subdirectorios de {directorioActual} por el siguiente error: {ex.Message}", LogsNivel.ERROR);
-                }
-
-                if (subdirectorios == null) yield break;
-
-                foreach (var subdirectorio in subdirectorios)
-                {
-                    foreach (var archivo in EnumerarArchivos(subdirectorio, patron, opcionesBusqueda))
-                    {
-                        yield return archivo;
-                    }
-                }
-            }
+            diccionario = diccionario.Distinct().OrderBy(p => p).ToList();
         }
 
-        private void CargarDiccionarioYBigramas()
+
+        public string ObtenerUltimaPalabra(string input)
         {
-            string dir = ConfiguracionSingleton.Configuracion.GetDirectorio();
-            if (!Directory.Exists(dir)) return;
-
-            var archivos = EnumerarArchivos(dir, "*.txt", SearchOption.AllDirectories);
-
-            foreach (var archivo in archivos)
-            {
-                try
-                {
-                    var texto = File.ReadAllText(archivo);
-                    var palabras = texto.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-
-                    for (int i = 0; i < palabras.Length; i++)
-                    {
-                        var actual = Normalizar(palabras[i]);
-                        if (!string.IsNullOrWhiteSpace(actual))
-                            diccionario.Add(actual);
-
-                        if (i < palabras.Length - 1)
-                        {
-                            var siguiente = Normalizar(palabras[i + 1]);
-                            if (string.IsNullOrWhiteSpace(siguiente)) continue;
-
-                            if (!bigramas.ContainsKey(actual))
-                                bigramas[actual] = new List<string>();
-
-                            if (!bigramas[actual].Contains(siguiente))
-                                bigramas[actual].Add(siguiente);
-                        }
-                    }
-                }
-                catch { }
-            }
+            var partes = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return partes.Length == 0 ? "" : partes[^1];
         }
 
-        private string Normalizar(string p) => p.Trim().ToLower();
 
-        
-        public void ActualizarSugerencia(string input)
+        public string ObtenerResto(string input)
         {
-            cts?.Cancel();
-            cts = new CancellationTokenSource();
-            var token = cts.Token;
-
-            lock (lockObj)
-            {
-                autocompletadoReal = "";
-                sugerenciaVisible = "";
-            }
-
-            _ = Task.Run(() =>
-            {
-                try
-                {
-                    Thread.Sleep(50); 
-                    if (token.IsCancellationRequested) return;
-
-                    if (string.IsNullOrEmpty(input)) return;
-
-                    
-                    bool terminaConEspacio = input.EndsWith(" ");
-                    var partes = input.TrimEnd().Split(' ');
-                    string ultima = partes.LastOrDefault() ?? "";
-                    ultima = Normalizar(ultima);
-
-                    
-                    if (terminaConEspacio)
-                    {
-                        // buscar bigrama
-                        if (bigramas.TryGetValue(ultima, out var siguientes) && siguientes.Count > 0)
-                        {
-                            var siguiente = siguientes.FirstOrDefault();
-                            if (!string.IsNullOrWhiteSpace(siguiente))
-                            {
-                                lock (lockObj)
-                                {
-                                    autocompletadoReal = siguiente;
-                                    sugerenciaVisible = siguiente; 
-                                }
-                                return;
-                            }
-                        }
-
-                        // Si no hay bigrama, no sugerimos nada
-                        return;
-                    }
-
-                    // Si no hay espacio final: intentar autocompletar la palabra actual por prefijo
-                    var match = diccionario
-                        .Where(p => p.StartsWith(ultima, StringComparison.OrdinalIgnoreCase))
-                        .OrderBy(p => p.Length)
-                        .FirstOrDefault();
-
-                    if (!string.IsNullOrWhiteSpace(match) && match != ultima)
-                    {
-                        lock (lockObj)
-                        {
-                            autocompletadoReal = match;
-                            sugerenciaVisible = match.Substring(ultima.Length);
-                        }
-                        return;
-                    }
-
-                    
-                    if (bigramas.TryGetValue(ultima, out var lista) && lista.Count > 0)
-                    {
-                        var next = lista.FirstOrDefault();
-                        if (!string.IsNullOrWhiteSpace(next))
-                        {
-                            lock (lockObj)
-                            {
-                                autocompletadoReal = next;
-                                sugerenciaVisible = " " + next; 
-                            }
-                        }
-                    }
-                }
-                catch { }
-            }, token);
+            var index = input.LastIndexOf(' ');
+            if (index == -1) return "";
+            return input[..(index + 1)];
         }
 
-        // Devuelve lo que se debe mostrar como ghost-text (puede empezar por espacio)
-        public string ObtenerGhostText()
+        public string? BuscarCoincidencia(string palabra)
         {
-            lock (lockObj) return sugerenciaVisible;
+            if (string.IsNullOrWhiteSpace(palabra))
+                return null;
+
+            return diccionario
+                .FirstOrDefault(p => p.StartsWith(palabra, StringComparison.OrdinalIgnoreCase));
         }
 
-        public bool HaySugerencia()
+        public void PintarInputConGhost(string input)
         {
-            lock (lockObj) return !string.IsNullOrEmpty(autocompletadoReal);
-        }
+            Console.Write(input);
 
-        // Completa con TAB y limpia estado interno para evitar duplicados
-        public string CompletarConTab(string input)
-        {
-            lock (lockObj)
+            string ultima = ObtenerUltimaPalabra(input);
+            string resto = ObtenerResto(input);
+
+            string? sugerencia = BuscarCoincidencia(ultima);
+
+            if (sugerencia != null && sugerencia.Length > ultima.Length)
             {
-                if (string.IsNullOrWhiteSpace(autocompletadoReal))
-                    return input;
-
-                string result = input;
-
-                
-                if (input.EndsWith(" "))
-                {
-                    result = input + autocompletadoReal + " ";
-                }
-                else
-                {
-                    
-                    var partes = input.Split(' ').ToList();
-                    string ultima = partes.LastOrDefault() ?? "";
-                    if (!string.IsNullOrEmpty(ultima) && autocompletadoReal.StartsWith(ultima, StringComparison.OrdinalIgnoreCase))
-                    {
-                        partes[partes.Count - 1] = autocompletadoReal;
-                        result = string.Join(" ", partes) + " ";
-                    }
-                    else
-                    {
-                        
-                        result = input + " " + autocompletadoReal + " ";
-                    }
-                }
-
-                
-                autocompletadoReal = "";
-                sugerenciaVisible = "";
-
-                return result;
-            }
-        }
-
-        
-        public void RechazarSugerencia()
-        {
-            lock (lockObj)
-            {
-                autocompletadoReal = "";
-                sugerenciaVisible = "";
+                string fantasma = sugerencia[ultima.Length..];
+                AnsiConsole.Markup($"[grey]{fantasma}[/]");
             }
         }
     }
