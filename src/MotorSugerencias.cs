@@ -17,6 +17,9 @@ namespace ProyectoFinalProgramacionParalela
         private static Logs logsSugerencias = new Logs(LogsNivel.ERROR);
 
         private List<string> diccionario;
+
+        private CancellationTokenSource? ctsBusqueda;
+        private readonly object lockBusqueda = new object();
     
 
         MotorSugerenciasSingleton()
@@ -83,6 +86,33 @@ namespace ProyectoFinalProgramacionParalela
 
             return diccionario
                 .FirstOrDefault(p => p.StartsWith(palabra, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public async Task<string?> BuscarCoincidenciaAsync(string palabra)
+        {
+            if (string.IsNullOrWhiteSpace(palabra)) return null;
+
+            //Cancelar la busqueda anterior si existe
+            lock (lockBusqueda)
+            {
+                ctsBusqueda?.Cancel();
+                ctsBusqueda = new CancellationTokenSource();
+            }
+            //Creamos una nueva token
+            var token = ctsBusqueda.Token;
+
+            return await Task.Run(() =>
+            {
+                foreach (var p in diccionario)
+                {
+                    token.ThrowIfCancellationRequested();
+                    //Buscamos entre las palabras del diccionario
+                    if (p.StartsWith(palabra, StringComparison.OrdinalIgnoreCase))
+                        return p;
+                }
+                //Si no se encontro retornamos null
+                return null;
+            }, token);
         }
 
         public void PintarInputConGhost(string input)
