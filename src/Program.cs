@@ -202,7 +202,7 @@ namespace ProyectoFinalProgramacionParalela
             MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT(conf.GetDirectorio());
             //archivo de prueba
             //MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT("src/archivos");
-            Console.WriteLine("Buscador de texto en archivos V0.1");
+            Console.WriteLine("Buscador de texto en archivos V0.5");
 
             if (!conf.GetLanzadoPrimeraVez())
             {
