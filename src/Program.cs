@@ -264,7 +264,7 @@ namespace ProyectoFinalProgramacionParalela
             Console.Clear();
             Console.CursorVisible = true;
 
-            CargarDiccionarioDesdeTXT("archivos");
+            CargarDiccionarioDesdeTXT("src/archivos");
             Logs debugLogs = new Logs(LogsNivel.DEBUG);
             ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
             DatosSingleton capaDatos = DatosSingleton.Datos;
