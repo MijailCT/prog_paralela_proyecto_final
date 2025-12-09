@@ -12,6 +12,8 @@ namespace ProyectoFinalProgramacionParalela
         private static MotorSugerenciasSingleton? instance = null;
         private static readonly object _lock = new object();
 
+        private static Logs logsSugerencias = new Logs(LogsNivel.ERROR);
+
         private readonly HashSet<string> diccionario;
         private readonly Dictionary<string, List<string>> bigramas;
 
@@ -44,12 +46,68 @@ namespace ProyectoFinalProgramacionParalela
             }
         }
 
+        //TODO: hacer una funcion EnumerarArchivos en general para no repetir codigo
+        public static IEnumerable<string> EnumerarArchivos(string directorioActual, string patron, SearchOption opcionesBusqueda)
+        {
+            //Enumeramos el directorio actual, pero agarramos errores para que no explote todo
+            IEnumerable<string>? archivos = null;
+            try
+            {
+                archivos = Directory.EnumerateFiles(directorioActual, patron, SearchOption.TopDirectoryOnly);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                logsSugerencias.WriteLine($"No se pudo acceder al directorio {directorioActual}!", LogsNivel.ERROR);
+            }
+            catch (Exception ex)
+            {
+                logsSugerencias.WriteLine($"No se pudo acceder al directorio {directorioActual} por el siguiente error: {ex.Message}", LogsNivel.ERROR);
+            }
+
+            //Si fallamos con enumerar los archivos, nos retiramos y el iterador termina aqui
+            if (archivos == null) yield break;
+
+            foreach (var archivo in archivos)
+            {
+                yield return archivo;
+            }
+
+            //Si realmente queremos rebuscar en todo entonces a enumerar los demas directorios
+            if (opcionesBusqueda == SearchOption.AllDirectories)
+            {
+                IEnumerable<string>? subdirectorios = null;
+                //Por si acaso, uno nunca sabe...
+                try
+                {
+                    subdirectorios = Directory.EnumerateDirectories(directorioActual);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    logsSugerencias.WriteLine($"No se pudo leer los subdirectorios de {directorioActual}!", LogsNivel.ERROR);
+                }
+                catch (Exception ex)
+                {
+                    logsSugerencias.WriteLine($"No se pudo leer los subdirectorios de {directorioActual} por el siguiente error: {ex.Message}", LogsNivel.ERROR);
+                }
+
+                if (subdirectorios == null) yield break;
+
+                foreach (var subdirectorio in subdirectorios)
+                {
+                    foreach (var archivo in EnumerarArchivos(subdirectorio, patron, opcionesBusqueda))
+                    {
+                        yield return archivo;
+                    }
+                }
+            }
+        }
+
         private void CargarDiccionarioYBigramas()
         {
             string dir = ConfiguracionSingleton.Configuracion.GetDirectorio();
             if (!Directory.Exists(dir)) return;
 
-            var archivos = Directory.EnumerateFiles(dir, "*.txt", SearchOption.AllDirectories);
+            var archivos = EnumerarArchivos(dir, "*.txt", SearchOption.AllDirectories);
 
             foreach (var archivo in archivos)
             {
