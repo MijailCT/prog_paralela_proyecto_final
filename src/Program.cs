@@ -46,8 +46,6 @@ namespace ProyectoFinalProgramacionParalela
         }
 
 
-
-
         public static async Task Busqueda()
         {
             Console.Clear();
@@ -200,8 +198,10 @@ namespace ProyectoFinalProgramacionParalela
             ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
             DatosSingleton capaDatos = DatosSingleton.Datos;
             MetricasSingleton metricas = MetricasSingleton.Metricas;
-            MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT("src/archivos");
-
+            //TODO: hacer esto asincrono o optimizar de alguna manera
+            MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT(conf.GetDirectorio());
+            //archivo de prueba
+            //MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT("src/archivos");
             Console.WriteLine("Buscador de texto en archivos V0.1");
 
             if (!conf.GetLanzadoPrimeraVez())
