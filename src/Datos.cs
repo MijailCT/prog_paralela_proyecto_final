@@ -135,7 +135,7 @@ namespace ProyectoFinalProgramacionParalela
         {
             if (!Directory.Exists(directorio)) return;
 
-            var archivos = EnumerarArchivo(directorio, "*.txt");
+            var archivos = Common.EnumerarArchivos(directorio, "*.txt", SearchOption.AllDirectories);
             var opciones = ConfiguracionSingleton.Configuracion.GetOpcionesParalelas();
 
             await Parallel.ForEachAsync(archivos, opciones, async (archivo, token) =>
