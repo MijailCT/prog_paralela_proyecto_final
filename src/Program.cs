@@ -218,6 +218,7 @@ namespace ProyectoFinalProgramacionParalela
                         break;
                     default:
                         conf.Guardar();
+                        MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT(conf.GetDirectorio());
                         return;
                 }
             }
