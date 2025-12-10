@@ -37,11 +37,19 @@ namespace ProyectoFinalProgramacionParalela
             return seleccionIdx == 0 ? -1 : seleccionIdx;
         }
 
-        public static void MostrarTablaArchivos(List<string> lista)
+        public static async Task MostrarTablaArchivos(List<string> lista)
         {
+            var datos = DatosSingleton.Datos;
             int archivoIdx = MostrarOpciones(lista, "Seleccione un archivo para abrir");
             if (archivoIdx == -1) return;
             Console.WriteLine($"Abriendo el archivo {lista[archivoIdx - 1]}!");
+            if(datos.ExisteDocumento(lista[archivoIdx - 1]))
+            {
+                await datos.IncrementarPuntajeAsync(lista[archivoIdx - 1]);
+            } else
+            {
+                await datos.GuardarDocumentoAsync(lista[archivoIdx - 1], File.ReadAllText(lista[archivoIdx - 1]), 1);
+            }
             MotorBusquedaSingleton.AbrirArchivo(lista[archivoIdx - 1]);
         }
 
@@ -114,7 +122,7 @@ namespace ProyectoFinalProgramacionParalela
                     Console.WriteLine();
                     Console.WriteLine($"Buscando el texto \"{input}\" en archivos...");
                     List<string> resultados = motorBusqueda.Buscar(input);
-                    MostrarTablaArchivos(resultados);
+                    await MostrarTablaArchivos(resultados);
                     //Limpiamos las variables de input, sugerenciaActual y ultimoInputProcesado por si acaso
                     input = "";
                     sugerenciaActual = null;

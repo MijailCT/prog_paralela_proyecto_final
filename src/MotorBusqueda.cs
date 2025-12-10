@@ -18,7 +18,6 @@ namespace ProyectoFinalProgramacionParalela
         //Implementacion de Directory.EnumerateFiles que atrapa errores
         //OJO: Esto no es una funcion que mete a la memoria todos los archivos, 
         // sino un iterador que trabaja por partes.
-        //TODO: Tomar en cuenta los puntajes de cada archivo de alguna manera...
         public static IEnumerable<string> EnumerarArchivos(string directorioActual, string patron, SearchOption opcionesBusqueda)
         {
             //Enumeramos el directorio actual, pero agarramos errores para que no explote todo
@@ -96,11 +95,20 @@ namespace ProyectoFinalProgramacionParalela
         public List<string> Buscar(string texto)
         {
             var conf = ConfiguracionSingleton.Configuracion;
+            var datos = DatosSingleton.Datos;
             //Enumeramos toooodos los archivos (incluyendo los que estan adentro de los directorios) de nuestro directorio de trabajo
             var archivos = EnumerarArchivos(conf.GetDirectorio(), "*.txt", SearchOption.AllDirectories);
+
+            //Buscamos el puntaje de cada archivo y los ordenamos
+            var archivosOrganizadosPuntaje = archivos
+            .AsParallel()
+            .Select(ruta_ => new { ruta = ruta_, puntaje = datos.ObtenerPuntaje(ruta_) })
+            .OrderByDescending(r => r.puntaje)
+            .Select(r => r.ruta).ToList(); //Al final convertimos la lista a la normalidad para no afectar al Parallel.ForEach
+
             //Las concurrentbags sirven para recolectar datos de una forma thread-safe (osea, sin condiciones de carrera)
             var resultadosBag = new ConcurrentBag<string>();
-            Parallel.ForEach(archivos, conf.GetOpcionesParalelas(),
+            Parallel.ForEach(archivosOrganizadosPuntaje, conf.GetOpcionesParalelas(),
             (archivoPath) =>
             {
                 try
@@ -116,8 +124,15 @@ namespace ProyectoFinalProgramacionParalela
                     logsBusqueda.WriteLine($"No se pudo acceder al archivo {archivoPath} por el siguiente error: {ex.Message}", LogsNivel.ERROR);
                 }
             });
-            
-            return resultadosBag.ToList();
+
+            var resultadosOrganizados = resultadosBag
+            .ToList()
+            .AsParallel()
+            .Select(ruta_ => new { ruta = ruta_, puntaje = datos.ObtenerPuntaje(ruta_) })
+            .OrderByDescending(r => r.puntaje)
+            .Select(r => r.ruta).ToList();
+
+            return resultadosOrganizados;
         }
         
         public static MotorBusquedaSingleton MotorBusqueda

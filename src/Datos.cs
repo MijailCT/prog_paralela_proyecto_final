@@ -202,7 +202,7 @@ namespace ProyectoFinalProgramacionParalela
                 .ToList();
         }
 
-        private int ObtenerPuntaje(string ruta)
+        public int ObtenerPuntaje(string ruta)
         {
             using var conn = new SqliteConnection(connectionString);
             conn.Open();
