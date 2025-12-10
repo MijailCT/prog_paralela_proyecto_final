@@ -61,7 +61,7 @@ namespace ProyectoFinalProgramacionParalela
             DatosSingleton capaDatos = DatosSingleton.Datos;
             MotorBusquedaSingleton motorBusqueda = MotorBusquedaSingleton.MotorBusqueda;
             MotorSugerenciasSingleton motorSugerencias = MotorSugerenciasSingleton.MotorSugerencias;
-            MetricasSingleton metricas = MetricasSingleton.Metricas;
+            MetricasSingleton metricas = MetricasSingleton.Instancia;
 
             string input = "";
             string? sugerenciaActual = null;
@@ -243,7 +243,7 @@ namespace ProyectoFinalProgramacionParalela
             Logs debugLogs = new Logs(LogsNivel.DEBUG);
             ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
             DatosSingleton capaDatos = DatosSingleton.Datos;
-            MetricasSingleton metricas = MetricasSingleton.Metricas;
+            MetricasSingleton metricas = MetricasSingleton.Instancia;
             Console.WriteLine("Buscador de texto en archivos V0.5");
 
             if (!conf.GetLanzadoPrimeraVez() || !Directory.Exists(conf.GetDirectorio()))
