@@ -60,3 +60,8 @@ src/*.txt
 # configuracion
 src/*.json
 /*.json
+
+# Archivos temporales + base de datos sqlite
+*.tmp
+/*.db
+src/*.db
