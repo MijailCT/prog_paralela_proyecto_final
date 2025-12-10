@@ -93,10 +93,6 @@ namespace ProyectoFinalProgramacionParalela
             }
         }
 
-        public int ObtenerPuntaje_dummy(string ruta)
-        {
-            return 0;
-        }
         
         public List<string> Buscar(string texto)
         {
