@@ -150,29 +150,29 @@ namespace ProyectoFinalProgramacionParalela
         }
 
         private IEnumerable<string> EnumerarArchivo(string ruta, string patron)
-{
-        var cola = new Queue<string>();
-        cola.Enqueue(ruta);
+        {
+            var cola = new Queue<string>();
+            cola.Enqueue(ruta);
 
-        while (cola.Count > 0)
-    {
-        string actual = cola.Dequeue();
+            while (cola.Count > 0)
+            {
+                string actual = cola.Dequeue();
 
-        string[] archivos = Array.Empty<string>();
-        try { archivos = Directory.GetFiles(actual, patron); }
-        catch { }
+                string[] archivos = Array.Empty<string>();
+                try { archivos = Directory.GetFiles(actual, patron); }
+                catch { }
 
-        foreach (string archivo in archivos)
-            yield return archivo;
+                foreach (string archivo in archivos)
+                    yield return archivo;
 
-        string[] subdirs = Array.Empty<string>();
-        try { subdirs = Directory.GetDirectories(actual); }
-        catch { }
+                string[] subdirs = Array.Empty<string>();
+                try { subdirs = Directory.GetDirectories(actual); }
+                catch { }
 
-        foreach (string subdir in subdirs)
-            cola.Enqueue(subdir);
-    }
-}
+                foreach (string subdir in subdirs)
+                    cola.Enqueue(subdir);
+            }
+        }
 
         public bool ExisteDocumento(string ruta)
         {
