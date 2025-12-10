@@ -18,7 +18,6 @@ namespace ProyectoFinalProgramacionParalela
         //Implementacion de Directory.EnumerateFiles que atrapa errores
         //OJO: Esto no es una funcion que mete a la memoria todos los archivos, 
         // sino un iterador que trabaja por partes.
-        //TODO: Tomar en cuenta los puntajes de cada archivo de alguna manera...
         public static IEnumerable<string> EnumerarArchivos(string directorioActual, string patron, SearchOption opcionesBusqueda)
         {
             //Enumeramos el directorio actual, pero agarramos errores para que no explote todo
@@ -92,7 +91,6 @@ namespace ProyectoFinalProgramacionParalela
                 Process.Start("open", path);
             }
         }
-
         
         public List<string> Buscar(string texto)
         {
@@ -103,7 +101,7 @@ namespace ProyectoFinalProgramacionParalela
 
             //Buscamos el puntaje de cada archivo y los ordenamos
             var archivosOrganizadosPuntaje = archivos
-            .Select(ruta_ => new { ruta = ruta_, puntaje = datos.ObtenerPuntaje(ruta_) }) //Por ahora comentado hasta que la capa de datos este lista
+            .Select(ruta_ => new { ruta = ruta_, puntaje = datos.ObtenerPuntaje(ruta_) })
             .OrderByDescending(r => r.puntaje)
             .Select(r => r.ruta).ToList(); //Al final convertimos la lista a la normalidad para no afectar al Parallel.ForEach
 
