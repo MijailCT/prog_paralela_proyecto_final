@@ -8,3 +8,15 @@
 * Sistema de configuracion
 * Organizacion de todas las clases en archivos diferentes
 * Menu del programa + sub-menus
+
+## Daniel León De Thomas (2023-1087):
+* **Motor de sugerencias especulativas (Rol 2)**
+* Autocompletado en tiempo real con `TAB`
+* Sugerencias en **gris** con `Spectre.Console`
+* Búsqueda asíncrona con `Task.Run` y `CancellationToken`
+* Carga de palabras desde contenido de archivos `.txt`
+* Integración con `MotorBusquedaSingleton`
+* Manejo de `Backspace`, `TAB` y `ENTER`
+* Pruebas funcionales en consola
+* Documentación técnica del motor
+* 9 commits en `feature/motor-especulacion`
