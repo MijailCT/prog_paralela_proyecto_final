@@ -76,12 +76,12 @@ namespace ProyectoFinalProgramacionParalela
         
         public double CalcularSpeedup(double tiempoSecuencial, double tiempoParalelo)
         {
-            if (tiempoParalelo <= 0)
+            if (tiempoParalelo <= 0 || tiempoSecuencial <= 0)
                 return 0;
             return tiempoSecuencial / tiempoParalelo;
         }
 
-        public double CalcularEficiencia(double speedup, int numProcesadores)
+        public double CalcularEficiencia(double speedup, double numProcesadores)
         {
             if (numProcesadores <= 0)
                 return 0;
