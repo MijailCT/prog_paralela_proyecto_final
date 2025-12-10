@@ -248,10 +248,19 @@ namespace ProyectoFinalProgramacionParalela
             //MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT("src/archivos");
             Console.WriteLine("Buscador de texto en archivos V0.5");
 
-            if (!conf.GetLanzadoPrimeraVez())
+            if (!conf.GetLanzadoPrimeraVez() || !Directory.Exists(conf.GetDirectorio()))
             {
-                Console.WriteLine("[Configuracion inicial]");
-                Console.WriteLine("A continuacion escribira datos necesarios para el funcionamiento del programa.");
+                if (!conf.GetLanzadoPrimeraVez())
+                {
+                    Console.WriteLine("[Configuracion inicial]");
+                    Console.WriteLine("A continuacion escribira datos necesarios para el funcionamiento del programa.");
+                }
+                else
+                {
+                    Console.WriteLine("[Reconfiguracion]");
+                    Console.WriteLine("El directorio que ha seleccionado anteriormente ya no existe!");
+                    Console.WriteLine("Debe de reconfigurarlo y seleccionar una ruta nueva.");
+                }
                 Console.Write("Directorio de trabajo: ");
                 string dir = Console.ReadLine() ?? "./";
                 while (!Directory.Exists(dir))
