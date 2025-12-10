@@ -103,8 +103,7 @@ namespace ProyectoFinalProgramacionParalela
 
             //Buscamos el puntaje de cada archivo y los ordenamos
             var archivosOrganizadosPuntaje = archivos
-            .Select(r => new { ruta = r, puntaje = ObtenerPuntaje_dummy(r) })
-            //.Select(ruta => new { ruta = ruta, puntaje = datos.ObtenerPuntaje(ruta) }) //Por ahora comentado hasta que la capa de datos este lista
+            .Select(ruta_ => new { ruta = ruta_, puntaje = datos.ObtenerPuntaje(ruta_) }) //Por ahora comentado hasta que la capa de datos este lista
             .OrderByDescending(r => r.puntaje)
             .Select(r => r.ruta).ToList(); //Al final convertimos la lista a la normalidad para no afectar al Parallel.ForEach
 
