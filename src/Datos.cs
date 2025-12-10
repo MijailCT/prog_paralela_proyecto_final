@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System;
+using System.Linq;
 
 namespace ProyectoFinalProgramacionParalela
 {
-    //OJO: Capa de datos
+    
     public sealed class DatosSingleton
     {
-        private static DatosSingleton? instance = null;
+        private static DatosSingleton instance = null;
         private static readonly object _lock = new object();
 
         private readonly string dbPath = "prog_paralela_proyecto.db";
@@ -33,7 +34,7 @@ namespace ProyectoFinalProgramacionParalela
                 {
                     if (instance == null)
                     {
-                        instance ??= new DatosSingleton();
+                        instance = new DatosSingleton();
                     }
                     return instance;
                 }
@@ -79,6 +80,7 @@ namespace ProyectoFinalProgramacionParalela
                 using var cmd = new SqliteCommand(sql, conn);
                 cmd.ExecuteNonQuery();
             }
+            
         }
 
         // Guarda o actualiza documento con puntaje
@@ -129,12 +131,11 @@ namespace ProyectoFinalProgramacionParalela
             });
         }
 
-        // COMMIT DE HOY - Indexación paralela + ExisteDocumento
         public async Task IndexarDirectorioAsync(string directorio)
         {
             if (!Directory.Exists(directorio)) return;
 
-            var archivos = Directory.EnumerateFiles(directorio, "*.txt", SearchOption.AllDirectories);
+            var archivos = EnumerarArchivo(directorio, "*.txt");
             var opciones = ConfiguracionSingleton.Configuracion.GetOpcionesParalelas();
 
             await Parallel.ForEachAsync(archivos, opciones, async (archivo, token) =>
@@ -148,6 +149,31 @@ namespace ProyectoFinalProgramacionParalela
             });
         }
 
+        private IEnumerable<string> EnumerarArchivo(string ruta, string patron)
+{
+        var cola = new Queue<string>();
+        cola.Enqueue(ruta);
+
+        while (cola.Count > 0)
+    {
+        string actual = cola.Dequeue();
+
+        string[] archivos = Array.Empty<string>();
+        try { archivos = Directory.GetFiles(actual, patron); }
+        catch { }
+
+        foreach (string archivo in archivos)
+            yield return archivo;
+
+        string[] subdirs = Array.Empty<string>();
+        try { subdirs = Directory.GetDirectories(actual); }
+        catch { }
+
+        foreach (string subdir in subdirs)
+            cola.Enqueue(subdir);
+    }
+}
+
         public bool ExisteDocumento(string ruta)
         {
             using var conn = new SqliteConnection(connectionString);
@@ -156,6 +182,71 @@ namespace ProyectoFinalProgramacionParalela
             using var cmd = new SqliteCommand(sql, conn);
             cmd.Parameters.AddWithValue("@ruta", ruta);
             return (long?)cmd.ExecuteScalar() > 0;
+        }
+
+        // busqueda y orden de puntaje 
+        public List<string> BuscarDocumentosQueContengan(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) return new();
+
+            var resultados = new ConcurrentBag<string>();
+
+            Parallel.ForEach(cacheContenido, kv =>
+            {
+                if (kv.Value.Contains(texto, StringComparison.OrdinalIgnoreCase))
+                    resultados.Add(kv.Key);
+            });
+
+            return resultados
+                .OrderByDescending(ruta => ObtenerPuntaje(ruta))
+                .ToList();
+        }
+
+        private int ObtenerPuntaje(string ruta)
+        {
+            using var conn = new SqliteConnection(connectionString);
+            conn.Open();
+            using var cmd = new SqliteCommand("SELECT Puntaje FROM Documentos WHERE Ruta = @ruta", conn);
+            cmd.Parameters.AddWithValue("@ruta", ruta);
+            return Convert.ToInt32(cmd.ExecuteScalar() ?? 0);
+        }
+
+        // metricas y logs
+        public async Task RegistrarMetricaAsync(string operacion, double tiempoMs, int? hilos = null, int? docs = null)
+        {
+            await Task.Run(() =>
+            {
+                using var conn = new SqliteConnection(connectionString);
+                conn.Open();
+                using var cmd = new SqliteCommand(
+                    "INSERT INTO Metricas (Operacion, TiempoMs, HilosUsados, DocumentosProcesados) VALUES (@op, @t, @h, @d)", conn);
+                cmd.Parameters.AddWithValue("@op", operacion);
+                cmd.Parameters.AddWithValue("@t", tiempoMs);
+                cmd.Parameters.AddWithValue("@h", hilos ?? (object)DBNull.Value);
+                cmd.Parameters.AddWithValue("@d", docs ?? (object)DBNull.Value);
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        public async Task LogAsync(string nivel, string mensaje)
+        {
+            await Task.Run(() =>
+            {
+                using var conn = new SqliteConnection(connectionString);
+                conn.Open();
+                using var cmd = new SqliteCommand("INSERT INTO Logs (Nivel, Mensaje) VALUES (@n, @m)", conn);
+                cmd.Parameters.AddWithValue("@n", nivel.ToUpper());
+                cmd.Parameters.AddWithValue("@m", mensaje);
+                cmd.ExecuteNonQuery();
+            });
+        }
+
+        // limpiar
+        public void LimpiarTodo()
+        {
+            if (File.Exists(dbPath)) File.Delete(dbPath);
+            cacheContenido.Clear();
+            InicializarBaseDeDatos();
         }
     }
 }
