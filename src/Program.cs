@@ -43,13 +43,13 @@ namespace ProyectoFinalProgramacionParalela
             int archivoIdx = MostrarOpciones(lista, "Seleccione un archivo para abrir");
             if (archivoIdx == -1) return;
             Console.WriteLine($"Abriendo el archivo {lista[archivoIdx - 1]}!");
-            // if(datos.ExisteDocumento(lista[archivoIdx - 1]))
-            // {
-            //     await datos.IncrementarPuntajeAsync(lista[archivoIdx - 1]);
-            // } else
-            // {
-            //     await datos.GuardarDocumentoAsync(lista[archivoIdx - 1], File.ReadAllText(lista[archivoIdx - 1]), 1);
-            // }
+            if(datos.ExisteDocumento(lista[archivoIdx - 1]))
+            {
+                await datos.IncrementarPuntajeAsync(lista[archivoIdx - 1]);
+            } else
+            {
+                await datos.GuardarDocumentoAsync(lista[archivoIdx - 1], File.ReadAllText(lista[archivoIdx - 1]), 1);
+            }
             MotorBusquedaSingleton.AbrirArchivo(lista[archivoIdx - 1]);
         }
 
