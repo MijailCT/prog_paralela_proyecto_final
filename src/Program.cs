@@ -242,10 +242,6 @@ namespace ProyectoFinalProgramacionParalela
             ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
             DatosSingleton capaDatos = DatosSingleton.Datos;
             MetricasSingleton metricas = MetricasSingleton.Metricas;
-            //TODO: hacer esto asincrono o optimizar de alguna manera
-            MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT(conf.GetDirectorio());
-            //archivo de prueba
-            //MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT("src/archivos");
             Console.WriteLine("Buscador de texto en archivos V0.5");
 
             if (!conf.GetLanzadoPrimeraVez() || !Directory.Exists(conf.GetDirectorio()))
@@ -272,6 +268,10 @@ namespace ProyectoFinalProgramacionParalela
                 conf.SetDirectorio(dir);
                 conf.Guardar();
             }
+
+            MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT(conf.GetDirectorio());
+            //archivo de prueba
+            //MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT("src/archivos");
 
             while (true)
             {
