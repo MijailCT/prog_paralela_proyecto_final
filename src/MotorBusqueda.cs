@@ -123,8 +123,14 @@ namespace ProyectoFinalProgramacionParalela
                     logsBusqueda.WriteLine($"No se pudo acceder al archivo {archivoPath} por el siguiente error: {ex.Message}", LogsNivel.ERROR);
                 }
             });
-            
-            return resultadosBag.ToList();
+
+            var resultadosOrganizados = resultadosBag
+            .ToList()
+            .Select(ruta_ => new { ruta = ruta_, puntaje = datos.ObtenerPuntaje(ruta_) })
+            .OrderByDescending(r => r.puntaje)
+            .Select(r => r.ruta).ToList();
+
+            return resultadosOrganizados;
         }
         
         public static MotorBusquedaSingleton MotorBusqueda
