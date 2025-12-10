@@ -218,6 +218,9 @@ namespace ProyectoFinalProgramacionParalela
                         break;
                     default:
                         conf.Guardar();
+                        Console.WriteLine("Cargando diccionario...");
+                        MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT(conf.GetDirectorio());
+                        Console.Clear();
                         return;
                 }
             }
@@ -241,16 +244,21 @@ namespace ProyectoFinalProgramacionParalela
             ConfiguracionSingleton conf = ConfiguracionSingleton.Configuracion;
             DatosSingleton capaDatos = DatosSingleton.Datos;
             MetricasSingleton metricas = MetricasSingleton.Metricas;
-            //TODO: hacer esto asincrono o optimizar de alguna manera
-            MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT(conf.GetDirectorio());
-            //archivo de prueba
-            //MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT("src/archivos");
             Console.WriteLine("Buscador de texto en archivos V0.5");
 
-            if (!conf.GetLanzadoPrimeraVez())
+            if (!conf.GetLanzadoPrimeraVez() || !Directory.Exists(conf.GetDirectorio()))
             {
-                Console.WriteLine("[Configuracion inicial]");
-                Console.WriteLine("A continuacion escribira datos necesarios para el funcionamiento del programa.");
+                if (!conf.GetLanzadoPrimeraVez())
+                {
+                    Console.WriteLine("[Configuracion inicial]");
+                    Console.WriteLine("A continuacion escribira datos necesarios para el funcionamiento del programa.");
+                }
+                else
+                {
+                    Console.WriteLine("[Reconfiguracion]");
+                    Console.WriteLine("El directorio que ha seleccionado anteriormente ya no existe!");
+                    Console.WriteLine("Debe de reconfigurarlo y seleccionar una ruta nueva.");
+                }
                 Console.Write("Directorio de trabajo: ");
                 string dir = Console.ReadLine() ?? "./";
                 while (!Directory.Exists(dir))
@@ -261,7 +269,13 @@ namespace ProyectoFinalProgramacionParalela
                 }
                 conf.SetDirectorio(dir);
                 conf.Guardar();
+                Console.Clear();
             }
+            Console.WriteLine("Cargando diccionario...");
+            MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT(conf.GetDirectorio());
+            Console.Clear();
+            //archivo de prueba
+            //MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT("src/archivos");
 
             while (true)
             {

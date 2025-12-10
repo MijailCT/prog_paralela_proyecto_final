@@ -16,7 +16,7 @@ namespace ProyectoFinalProgramacionParalela
 
         private static Logs logsSugerencias = new Logs(LogsNivel.ERROR);
 
-        private List<string> diccionario;
+        private SortedSet<string> diccionario;
 
         private CancellationTokenSource? ctsBusqueda;
         private readonly object lockBusqueda = new object();
@@ -58,10 +58,14 @@ namespace ProyectoFinalProgramacionParalela
                                     .Select(m => m.Value)
                                     .Distinct();
 
-                diccionario.AddRange(palabras);
+                //diccionario.AddRange(palabras);
+                foreach (var palabra in palabras)
+                {
+                    diccionario.Add(palabra);
+                }
             }
 
-            diccionario = diccionario.Distinct().OrderBy(p => p).ToList();
+            diccionario = new SortedSet<string>(diccionario.Distinct().OrderBy(p => p).ToList());
         }
 
 
@@ -84,35 +88,15 @@ namespace ProyectoFinalProgramacionParalela
             if (string.IsNullOrWhiteSpace(palabra))
                 return null;
 
-            return diccionario
-                .FirstOrDefault(p => p.StartsWith(palabra, StringComparison.OrdinalIgnoreCase));
+            // Busca el primer elemento >= palabra (búsqueda binaria interna)
+            var view = diccionario.GetViewBetween(palabra, palabra + "\uffff");
+
+            return view.FirstOrDefault();
         }
 
         public async Task<string?> BuscarCoincidenciaAsync(string palabra)
         {
-            if (string.IsNullOrWhiteSpace(palabra)) return null;
-
-            //Cancelar la busqueda anterior si existe
-            lock (lockBusqueda)
-            {
-                ctsBusqueda?.Cancel();
-                ctsBusqueda = new CancellationTokenSource();
-            }
-            //Creamos una nueva token
-            var token = ctsBusqueda.Token;
-
-            return await Task.Run(() =>
-            {
-                foreach (var p in diccionario)
-                {
-                    token.ThrowIfCancellationRequested();
-                    //Buscamos entre las palabras del diccionario
-                    if (p.StartsWith(palabra, StringComparison.OrdinalIgnoreCase))
-                        return p;
-                }
-                //Si no se encontro retornamos null
-                return null;
-            }, token);
+            return await Task.Run(()=>{ return BuscarCoincidencia(palabra); });
         }
 
         public void PintarInputConGhost(string input)

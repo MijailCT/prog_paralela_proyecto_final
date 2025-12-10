@@ -15,3 +15,17 @@ Integrantes, matriculas y sus cuentas de GitHub:
 
 ## NOTAS
 Revisar el PDF del documento final en docs/ (seccion Anexos, Manual de ejecución) o el archivo docs/INSTRUCCIONES.md para instrucciones de ejecucion del programa.
+
+La informacion contenida en este proyecto (especificamente en dataset/) utiliza parte del siguiente dataset:
+
+Titulo: Text files from Gutenberg database
+
+Creador: Antonis Michalas
+
+Fuente (Zenodo): https://zenodo.org/records/3360392
+
+DOI: 10.5281/zenodo.3360392
+
+Este dataset esta licenciado bajo la **Creative Commons Attribution 4.0 International (CC-BY-4.0)**.
+
+Para ver los terminos completos de la licencia, visite: https://creativecommons.org/licenses/by/4.0/
