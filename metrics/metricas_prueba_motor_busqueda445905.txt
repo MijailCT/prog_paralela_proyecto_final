@@ -1,0 +1,7 @@
+----- RESULTADOS METRICAS -----
+Latencia Secuencial: 3167 ms
+Latencia Paralela:   184 ms
+Speedup:             17.21
+Eficiencia:          4.30
+Hilos:               4
+--------------------------------
