@@ -65,6 +65,11 @@ public class Tests_MotorBusqueda
             ["uno.txt"] = "hola mundo",
             ["dos.txt"] = "nada aquí"
         });
+        
+        //Hay que reiniciar MotorBusquedaSingleton aqui porque se le cruza el directorio
+        typeof(MotorBusquedaSingleton)
+        .GetField("instance", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)
+        .SetValue(null, null);
 
         ConfiguracionSingleton.Configuracion.SetDirectorio(dir);
 
