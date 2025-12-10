@@ -2,7 +2,7 @@ namespace ProyectoFinalProgramacionParalela
 {
     public static class Common
     {
-        public static IEnumerable<string> EnumerarArchivos(string directorioActual, string patron, SearchOption opcionesBusqueda, Logs? logObjeto = null)
+        public static IEnumerable<string> EnumerarArchivos(string directorioActual, string patron, SearchOption opcionesBusqueda = SearchOption.TopDirectoryOnly, Logs? logObjeto = null)
         {
             //Enumeramos el directorio actual, pero agarramos errores para que no explote todo
             IEnumerable<string>? archivos = null;
