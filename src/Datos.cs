@@ -41,7 +41,7 @@ namespace ProyectoFinalProgramacionParalela
             }
         }
 
-        private void InicializarBaseDeDatos()
+        public void InicializarBaseDeDatos()
         {
             using var conn = new SqliteConnection(connectionString);
             conn.Open();
