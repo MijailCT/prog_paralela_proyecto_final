@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace ProyectoFinalProgramacionParalela
 {
     public enum LogsNivel
@@ -17,6 +19,8 @@ namespace ProyectoFinalProgramacionParalela
         {
             logFilePath = $"log-{DateTime.Now.ToString("O")}.txt";
             nivel_minimo = nivel;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                logFilePath = logFilePath.Replace(":", "_");
         }
 
         public Logs(string path, bool useDate = true, LogsNivel nivel = LogsNivel.INFO)
@@ -24,6 +28,8 @@ namespace ProyectoFinalProgramacionParalela
             if (useDate) logFilePath = $"{path}-{DateTime.Now.ToString("O")}.txt";
             else logFilePath = path;
             nivel_minimo = nivel;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                logFilePath = logFilePath.Replace(":", "_");
         }
 
         public void Write(string txt, LogsNivel? nivel)
