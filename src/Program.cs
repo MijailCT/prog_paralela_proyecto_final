@@ -218,7 +218,9 @@ namespace ProyectoFinalProgramacionParalela
                         break;
                     default:
                         conf.Guardar();
+                        Console.WriteLine("Cargando diccionario...");
                         MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT(conf.GetDirectorio());
+                        Console.Clear();
                         return;
                 }
             }
@@ -267,9 +269,11 @@ namespace ProyectoFinalProgramacionParalela
                 }
                 conf.SetDirectorio(dir);
                 conf.Guardar();
+                Console.Clear();
             }
-
+            Console.WriteLine("Cargando diccionario...");
             MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT(conf.GetDirectorio());
+            Console.Clear();
             //archivo de prueba
             //MotorSugerenciasSingleton.MotorSugerencias.CargarDiccionarioDesdeTXT("src/archivos");
 
